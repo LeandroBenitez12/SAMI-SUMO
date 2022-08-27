@@ -1,4 +1,5 @@
-
+#define DEBUG_TATAMI 0
+#define DEBUG_MOVIMIENTO 1
 //Sensors fo tatami
 #define PIN_SENSOR_TATAMI_IZQ A7
 #define PIN_SENSOR_TATAMI_DER A6
@@ -13,6 +14,8 @@
 #define VELOCIDAD_DERECHA 100
 #define VELOCIDAD_IZQUIERDA 100 
 #define BORDE_TATAMI 250
+int tatami_derecho;
+int tatami_izquierdo;
 class Motor
 {
     //atributos
@@ -81,7 +84,7 @@ class Buzzer {
 };
 class Button {
   private:
-    int pin = 9
+    int pin = 9;
     bool state = HIGH;
 
     //metodo
@@ -89,18 +92,13 @@ class Button {
     Button(int p) {
       pin = p;
 
-      pinMode(pin, INPUT);
+      pinMode(pin, INPUT_PULLUP);
     }
 
     //metodos o acciones
     bool getIsPress() {
       bool estado = digitalRead(pin);
       return estado;
-    }
-
-    String getIsPressText() {
-      if (getIsPress()) return "PRESS";
-      else return "IS NOT PRESS";
     }
 
 };
@@ -112,8 +110,8 @@ Motor m2 = Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, VELOCIDAD_IZQUIERDA);
 Sensor tatami_dere = Sensor(PIN_SENSOR_TATAMI_DER);
 Sensor tatami_izqu = Sensor(PIN_SENSOR_TATAMI_IZQ);
 //Instancio los buttons
-Button *strategy = new  buttonPin(PIN_BUTTON_STRATEGY);
-Button *start = new  buttonPin(PIN_BUTTON_START);
+Button *strategy = new  Button(PIN_BUTTON_STRATEGY);
+Button *start = new  Button(PIN_BUTTON_START);
 //Instancio los buzzers
 Buzzer *b1 = new Buzzer(PIN_BUZZER);   
 //motores
@@ -149,33 +147,97 @@ void stopMotor() //freno
 }
 //buzzers
 void BuzzerOn(){
-    b1.setPrenderBuzzer();
+    b1->setPrenderBuzzer();
 }
 void BuzzerOff(){
-    b1.setApagarBuzzer();
+    b1->setApagarBuzzer();
 }
 //botones
 
+enum{
+  STANDBY,
+  BUSQUEDA,
+  HAY_RIVAL,
+  HAY_BORDE,
+};
+int movimientos = STANDBY;
+void switchCase(int movimiento){
+switch (movimiento)
+{
+case STANDBY:
+{
+  bool boton_start = start->getIsPress();
+  if (boton_start) {
+    movimiento = BUSQUEDA; 
+  }
+  else{
+      stopMotor();
+  }
+  break;
+}  
+  
+
+case BUSQUEDA:{
+  left();
+  if (strategy->getIsPress()) {
+    movimiento = HAY_RIVAL;
+  }
+  if (tatami_izquierdo < BORDE_TATAMI && tatami_derecho < BORDE_TATAMI ){
+    movimiento =HAY_BORDE;
+  }
+  break;
+}
+case HAY_RIVAL: {
+  forward();
+  if (tatami_izquierdo < BORDE_TATAMI && tatami_derecho < BORDE_TATAMI ){
+    movimiento =HAY_BORDE;
+  }
+  break;
+}
+case HAY_BORDE: {
+  left();
+  if (tatami_izquierdo > BORDE_TATAMI && tatami_derecho > BORDE_TATAMI ){
+    movimiento =HAY_RIVAL;
+  }
+}
+}
+}
+//-------------------------------------------------------------
+void ImprimirEstadoRobot(int movement, int button_start) 
+{
+  String estado_robot = "";
+  if (movement == STANDBY)
+    {estado_robot = "Stand By";}
+   else if (movement == BUSQUEDA)
+   {estado_robot = "Buscando";} 
+  else if (movement == HAY_RIVAL)
+    {estado_robot = "HAY RIVAL";}
+  else if (movement == HAY_BORDE)
+    {estado_robot = "HAY BORDE";}
+
+
+  Serial.print("State: ");
+  Serial.print(estado_robot);
+  Serial.print(" || ");
+  Serial.print(button_start);
+  Serial.println(" || ");
+}
 void setup() {
-    Serial.begin();
+    Serial.begin(9600);
 }
 
 void loop(){
-  int tatami_derecho = tatami_dere.leerSensor();
-  int tatami_izquierdo = tatami_izqu .leerSensor();
+  tatami_derecho = tatami_dere.leerSensor();
+  tatami_izquierdo = tatami_izqu .leerSensor();
  
-  if (tatami_izquierdo < BORDE_TATAMI && tatami_derecho < BORDE_TATAMI ){
-    BuzzerOn();    
-    backward();
-    delay(1000);
-    right();
-    delay(500);
+  switchCase(movimientos);
+  
+  if(DEBUG_MOVIMIENTO){
+    ImprimirEstadoRobot(movimientos,start->getIsPress());
   }
-  else{
-    BuzzerOff();
-    forward();
+  if(DEBUG_TATAMI){
+    Serial.print(tatami_izquierdo);
+    Serial.print("||");
+    Serial.println(tatami_derecho);
   }
-  Serial.print(tatami_izquierdo);
-  Serial.print("||");
-  Serial.println(tatami_derecho);
 }
