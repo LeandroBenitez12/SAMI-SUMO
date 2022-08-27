@@ -1,5 +1,5 @@
 #define DEBUG_TATAMI 0
-#define DEBUG_MOVIMIENTO 1
+#define DEBUG_movimientos 1
 //Sensors fo tatami
 #define PIN_SENSOR_TATAMI_IZQ A7
 #define PIN_SENSOR_TATAMI_DER A6
@@ -161,14 +161,14 @@ enum{
   HAY_BORDE,
 };
 int movimientos = STANDBY;
-void switchCase(int movimiento){
-switch (movimiento)
+void switchCase(){
+switch (movimientos)
 {
 case STANDBY:
 {
   bool boton_start = start->getIsPress();
-  if (boton_start) {
-    movimiento = BUSQUEDA; 
+  if (!boton_start) {
+    movimientos = BUSQUEDA; 
   }
   else{
       stopMotor();
@@ -178,27 +178,29 @@ case STANDBY:
   
 
 case BUSQUEDA:{
+  bool boton_strategy = strategy->getIsPress();
   left();
-  if (strategy->getIsPress()) {
-    movimiento = HAY_RIVAL;
+  if (!boton_strategy) {
+    movimientos = HAY_RIVAL;
   }
   if (tatami_izquierdo < BORDE_TATAMI && tatami_derecho < BORDE_TATAMI ){
-    movimiento =HAY_BORDE;
+    movimientos =HAY_BORDE;
   }
   break;
 }
 case HAY_RIVAL: {
   forward();
   if (tatami_izquierdo < BORDE_TATAMI && tatami_derecho < BORDE_TATAMI ){
-    movimiento =HAY_BORDE;
+    movimientos =HAY_BORDE;
   }
   break;
 }
 case HAY_BORDE: {
   left();
   if (tatami_izquierdo > BORDE_TATAMI && tatami_derecho > BORDE_TATAMI ){
-    movimiento =HAY_RIVAL;
+    movimientos =HAY_RIVAL;
   }
+  break;
 }
 }
 }
@@ -230,9 +232,9 @@ void loop(){
   tatami_derecho = tatami_dere.leerSensor();
   tatami_izquierdo = tatami_izqu .leerSensor();
  
-  switchCase(movimientos);
+  switchCase();
   
-  if(DEBUG_MOVIMIENTO){
+  if(DEBUG_movimientos){
     ImprimirEstadoRobot(movimientos,start->getIsPress());
   }
   if(DEBUG_TATAMI){
