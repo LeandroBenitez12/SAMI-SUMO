@@ -30,11 +30,22 @@ public:
         analogWrite(pin_pwm, 0);
     }        
 };
-class Sensores{
-    private:
-    int pin_señal
+class Sensor{
+private:
+    int pin_senal;
+
+public:
+     Sensor(int p){
+        pin_senal = p;
+        pinMode(pin_senal, INPUT);
+    }
+    int leerSensor(int pin_tatami){
+        pin_senal = pin_tatami;
+        int tatami = analogRead(pin_senal);
+        return tatami;
+    } 
 };
-// motores
+// motor
 #define TATAMI_IZQ A7
 #define TATAMI_DER A6
 #define BUZZER 5
@@ -49,6 +60,18 @@ int velocidad_izquierda = 100;
 Motor m1 = Motor(MR1, MR2PWM, velocidad_derecha);
 Motor m2 = Motor(ML1, ML2PWM, velocidad_izquierda);
 
+Sensor tatami_dere = Sensor(TATAMI_DER);
+Sensor tatami_izqu = Sensor(TATAMI_IZQ);
+
+/*
+int Sensorderecho(){
+    int state = tatami_derecho.leerSensor();
+    return state;
+}
+int Sensorizquierdo(){
+    int state = tatami_izquierdo.leerSensor();
+    return state;
+}*/
 
 void forward() //voy hacia adelante
 {
@@ -81,17 +104,24 @@ void stopMotor() //freno
   m2.stop();
 }
 void setup() {
-    forward();
-    delay(1000);
-    backward();
-    delay(1000);
-    left();
-    delay(1000);
-    right();
-    delay(1000);
-    stopMotor();
-    delay(1000);
+
 }
 void loop(){
-    
+  int tatami_derecho = tatami_dere.leerSensor(TATAMI_DER);
+  int tatami_izquierdo = tatami_izqu .leerSensor(TATAMI_IZQ);
+ 
+  if (tatami_izquierdo < 250 && tatami_derecho < 250 ){
+    //BuzzerOn();    
+    backward();
+    delay(1000);
+    right();
+    delay(500);
+  }
+  else{
+    //BuzzerOff();
+    forward();
+  }
+  Serial.print(tatami_izquierdo);
+  Serial.print("||");
+  Serial.println(tatami_derecho);
 }
