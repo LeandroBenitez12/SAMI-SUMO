@@ -98,7 +98,7 @@ void right() //giro a la derecha
     m2.forward();
 }
 
-void stop() //freno
+void stopMotor() //freno
 {
   m1.stop();
   m2.stop();
