@@ -117,18 +117,24 @@ Buzzer *b1 = new Buzzer(PIN_BUZZER);
 //motores
 void forward() //voy hacia adelante
 {
+    m1.setVelocidad(150); 
+    m2.setVelocidad(150);
     m1.forward();
     m2.forward();
 }
 
 void backward() //voy hacia atras
-{
+{   m1.setVelocidad(200); 
+    m2.setVelocidad(200);
     m1.backward();
     m2.backward();
+
 }
  
 void left() //giro a la izquierda
 {
+    m1.setVelocidad(100); 
+    m2.setVelocidad(170);
     m1.forward();
     m2.backward();
 }
@@ -136,6 +142,8 @@ void left() //giro a la izquierda
 
 void right() //giro a la derecha
 {
+    m1.setVelocidad(170); 
+    m2.setVelocidad(100);
     m1.backward();
     m2.forward();
 }
@@ -179,25 +187,25 @@ case STANDBY:
 
 case BUSQUEDA:{
   bool boton_strategy = strategy->getIsPress();
-  left();
+  right();
   if (!boton_strategy) {
     movimientos = HAY_RIVAL;
   }
-  if (tatami_izquierdo < BORDE_TATAMI && tatami_derecho < BORDE_TATAMI ){
+  if (tatami_izquierdo < BORDE_TATAMI || tatami_derecho < BORDE_TATAMI ){
     movimientos =HAY_BORDE;
   }
   break;
 }
 case HAY_RIVAL: {
   forward();
-  if (tatami_izquierdo < BORDE_TATAMI && tatami_derecho < BORDE_TATAMI ){
+  if (tatami_izquierdo < BORDE_TATAMI || tatami_derecho < BORDE_TATAMI ){
     movimientos =HAY_BORDE;
   }
   break;
 }
 case HAY_BORDE: {
   left();
-  if (tatami_izquierdo > BORDE_TATAMI && tatami_derecho > BORDE_TATAMI ){
+  if (tatami_izquierdo > BORDE_TATAMI || tatami_derecho > BORDE_TATAMI ){
     movimientos =HAY_RIVAL;
   }
   break;
