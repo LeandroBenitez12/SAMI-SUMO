@@ -1,11 +1,11 @@
 #define DEBUG_TATAMI 1
-#define DEBUG_movimientos 1
+#define DEBUG_MOVIMIENTOS 1
 //Sensors fo tatami
 #define PIN_SENSOR_TATAMI_IZQ A6
-#define PIN_SENSOR_TATAMI_DER A7
+#define PIN_SENSOR_TATAMI_DER A1
 //sensor de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO A3
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO A2
+#define PIN_SENSOR_DISTANCIA_DERECHO A0
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO A1
 // motor
 #define PIN_MOTOR_MR1 11 //DIR
 #define PIN_MOTOR_MR2PWM 10 //PWM
@@ -213,29 +213,28 @@ case STANDBY:
   
 
 case BUSQUEDA:{
-    
+    bool boton_strategy = strategy->getIsPress();
     left();
-    if (tatami_izquierdo < BORDE_TATAMI ||  tatami_derecho < BORDE_TATAMI ) movimientos =HAY_BORDE;
-    if (sensorIzquierdo == true && sensorDerecho == true) movimientos = HAY_RIVAL;
+    if (!boton_strategy ) movimientos = HAY_BORDE;
+    if (!sensorIzquierdo == true || !sensorDerecho == true) movimientos = HAY_RIVAL;
     
     break;
 }
 
 case HAY_RIVAL: {
+  bool boton_strategy = strategy->getIsPress();
   forward();
-  if (tatami_izquierdo < BORDE_TATAMI && tatami_derecho < BORDE_TATAMI ) movimientos =HAY_BORDE;
+  if (!boton_strategy) movimientos =HAY_BORDE;
   
-  if (sensorIzquierdo != true || sensorDerecho != true) movimientos = BUSQUEDA;
+  if (!sensorIzquierdo != true || !sensorDerecho != true) movimientos = BUSQUEDA;
 
   break;
 }
 
 case HAY_BORDE: {
     backward();
-    delay(300);
-    if (tatami_izquierdo > BORDE_TATAMI && tatami_derecho > BORDE_TATAMI ) movimientos = BUSQUEDA;
-    if (sensorIzquierdo == true && sensorDerecho ==true) movimientos = HAY_RIVAL;
-
+    delay(1000);
+    movimientos = BUSQUEDA; 
      break;
 }
 }
@@ -258,8 +257,10 @@ void ImprimirEstadoRobot(int movement)
   Serial.print("State: ");
   Serial.print(estado_robot);
   Serial.print(" || ");
- // Serial.print(sensorDer);
-  //Serial.println(" || ");
+  Serial.print(sensorDerecho);
+  Serial.print(" || ");
+  Serial.print(sensorIzquierdo);
+  Serial.println(" || ");
 }  
 void setup() {
     Serial.begin(9600);
@@ -271,21 +272,19 @@ void loop(){
     sensorDerecho = distanciaDerecha.leerSensorDistancia();
     tatami_derecho = tatami_der.leerSensorTatami();
     tatami_izquierdo = tatami_izq .leerSensorTatami();
-  
+
      switchCase();
 
-/*  if (millis() > tiempo_actual + TICK)
+  /*if (millis() > tiempo_actual + TICK)
   {
-    tiempo_actual = millis();
-    if(DEBUG_movimientos){
+    tiempo_actual = millis();*/
+    if(DEBUG_MOVIMIENTOS){
       ImprimirEstadoRobot(movimientos);
     }
+    /*
     if(DEBUG_TATAMI){
         Serial.print(tatami_izquierdo);
         Serial.print("||");
         Serial.println(tatami_derecho);
-    }
-  }*/
-      
-     
-}
+    }*/
+  }
