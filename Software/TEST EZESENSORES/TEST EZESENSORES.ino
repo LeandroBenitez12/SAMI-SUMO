@@ -216,7 +216,7 @@ case BUSQUEDA:{
     bool boton_strategy = strategy->getIsPress();
     left();
     if (!boton_strategy ) movimientos = HAY_BORDE;
-    if (!sensorIzquierdo == true || !sensorDerecho == true) movimientos = HAY_RIVAL;
+    if (sensorIzquierdo == true && sensorDerecho == true) movimientos = HAY_RIVAL;
     
     break;
 }
@@ -226,7 +226,7 @@ case HAY_RIVAL: {
   forward();
   if (!boton_strategy) movimientos =HAY_BORDE;
   
-  if (!sensorIzquierdo != true || !sensorDerecho != true) movimientos = BUSQUEDA;
+  if (sensorIzquierdo != true || sensorDerecho != true) movimientos = BUSQUEDA;
 
   break;
 }
@@ -268,8 +268,8 @@ void setup() {
 }
 
 void loop(){
-    sensorIzquierdo = distanciaIzquierda.leerSensorDistancia();
-    sensorDerecho = distanciaDerecha.leerSensorDistancia();
+    sensorIzquierdo = !distanciaIzquierda.leerSensorDistancia();
+    sensorDerecho = !distanciaDerecha.leerSensorDistancia();
     tatami_derecho = tatami_der.leerSensorTatami();
     tatami_izquierdo = tatami_izq .leerSensorTatami();
 
