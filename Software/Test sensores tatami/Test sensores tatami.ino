@@ -24,19 +24,19 @@ void setup() {
 
 void loop() {
   int tatami_derecho = leer_tatami(TATAMI_DER);
-  //int tatami_izquierdo = leer_tatami(TATAMI_IZQ);
+  int tatami_izquierdo = leer_tatami(TATAMI_IZQ);
  
-  if (/*tatami_izquierdo < 250 ||*/ tatami_derecho < 250 ){
+  if (tatami_izquierdo < 250 || tatami_derecho < 250 ){
     BuzzerOn();    
     Serial.println("Detecta");
   }
-  else{
+  else if(tatami_izquierdo > 250 && tatami_derecho > 250 ){
     BuzzerOff();
     Serial.println("no Detecta ");
 
   }
-  //Serial.print(tatami_izquierdo);
-  //Serial.print("||");
+  Serial.print(tatami_izquierdo);
+  Serial.print("||");
   Serial.println(tatami_derecho);
-  delay(500);
-  }gitgit
+  //delay();
+  }
