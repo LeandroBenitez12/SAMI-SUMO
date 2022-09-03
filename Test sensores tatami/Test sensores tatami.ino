@@ -39,4 +39,4 @@ void loop() {
   //Serial.print("||");
   Serial.println(tatami_derecho);
   delay(500);
-  }
+  }gitgit
