@@ -1,4 +1,4 @@
-#define DEBUG_TATAMI 1
+#define DEBUG_TATAMI 0
 #define DEBUG_MOVIMIENTOS 1
 // Sensors fo tatami
 #define PIN_SENSOR_TATAMI_IZQ A6
@@ -251,7 +251,7 @@ void switchCase()
     left();
     //if (tatami_izquierdo < 250 || tatami_derecho < 250)
       //movimientos = HAY_BORDE;
-    if (sensorIzquierdo <= 30) movimientos = HAY_RIVAL;
+    if (sensorIzquierdo <= 30 || sensorDerecho <= 30) movimientos = HAY_RIVAL;
 
     break;
   }
@@ -262,7 +262,7 @@ void switchCase()
     forward();
     //if (tatami_izquierdo < 250 && tatami_derecho < 250)
       //movimientos = HAY_BORDE;
-    if (sensorIzquierdo > 30) movimientos = BUSQUEDA;
+    if (sensorIzquierdo > 30 && sensorDerecho > 30) movimientos = BUSQUEDA;
     break;
   }
 
@@ -271,6 +271,7 @@ void switchCase()
     
     backward();
     delay(300);
+    
     if (tatami_izquierdo > 250 && tatami_derecho > 250)
       movimientos = BUSQUEDA;
 
