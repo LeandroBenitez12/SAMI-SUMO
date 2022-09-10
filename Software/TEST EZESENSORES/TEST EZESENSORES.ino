@@ -1,9 +1,9 @@
 #define DEBUG_TATAMI 0
 #define DEBUG_MOVIMIENTOS 0
 //Sensors fo tatami
-#define PIN_SENSOR_TATAMI_IZQ A6
-#define PIN_SENSOR_TATAMI_DER A7
-//sensor de distancia
+#define PIN_SENSOR_TATAMI_IZQ A7
+#define PIN_SENSOR_TATAMI_DER A0
+//sensor de distanciaa
 #define PIN_SENSOR_DISTANCIA_DERECHO A0
 #define PIN_SENSOR_DISTANCIA_IZQUIERDO A1
 // motor
@@ -141,24 +141,24 @@ Buzzer *b1 = new Buzzer(PIN_BUZZER);
 //motores
 void forward() //voy hacia adelante
 {
-  m1.setVelocidad(230);
-  m2.setVelocidad(230);
+  m1.setVelocidad(100);
+  m2.setVelocidad(100);
   m1.forward();
   m2.forward();
 }
 
 void backward() //voy hacia atras
 {
-  m1.setVelocidad(230);
-  m2.setVelocidad(230);
+  m1.setVelocidad(150);
+  m2.setVelocidad(150);
   m1.backward();
   m2.backward();
 }
  
 void left() //giro a la izquierda
 {
-  m1.setVelocidad(230);
-  m2.setVelocidad(230);
+  m1.setVelocidad(100);
+  m2.setVelocidad(100);
   m1.forward();
   m2.backward();
 }
@@ -216,8 +216,9 @@ case BUSQUEDA:{
     bool boton_strategy = strategy->getIsPress();
     left();
     if (tatami_izquierdo < 250 || tatami_derecho < 250   ) movimientos = HAY_BORDE;
-    if (sensorIzquierdo == true && sensorDerecho == true) movimientos = HAY_RIVAL;
-    
+    //if (sensorIzquierdo == true && sensorDerecho == true) movimientos = HAY_RIVAL;
+    if (!boton_strategy) movimientos = HAY_RIVAL;
+
     break;
 }
 
@@ -232,7 +233,7 @@ case HAY_RIVAL: {
 
 case HAY_BORDE: {
     backward();
-    delay(1000);
+    delay(300);
     if(tatami_izquierdo > 250 && tatami_derecho > 250 ) movimientos = BUSQUEDA; 
     
      break;

@@ -1,5 +1,5 @@
-#define DEBUG_TATAMI 1
-#define DEBUG_MOVIMIENTOS 1
+#define DEBUG_TATAMI 0
+#define DEBUG_MOVIMIENTOS 0
 // Sensors fo tatami
 #define PIN_SENSOR_TATAMI_IZQ A6
 #define PIN_SENSOR_TATAMI_DER A1
@@ -249,9 +249,9 @@ void switchCase()
   case BUSQUEDA:
   {
     left();
-    if (tatami_izquierdo < 250 || tatami_derecho < 250)
+    if (tatami_izquierdo <= 250 || tatami_derecho <= 250)
       movimientos = HAY_BORDE;
-    if (/*sensorIzquierdo <= 30 ||*/ sensorDerecho <= 30) movimientos = HAY_RIVAL;
+    if (/*sensorIzquierdo <= 40 ||*/ sensorDerecho <= 40) movimientos = HAY_RIVAL;
 
     break;
   }
@@ -260,9 +260,9 @@ void switchCase()
   {
     
     forward();
-    if (tatami_izquierdo < 250 && tatami_derecho < 250)
+    if (tatami_izquierdo <= 250 || tatami_derecho <= 250)
       movimientos = HAY_BORDE;
-    if (/*sensorIzquierdo > 30 &&*/ sensorDerecho > 30) movimientos = BUSQUEDA;
+    if (/*sensorIzquierdo > 40 &&*/ sensorDerecho > 40) movimientos = BUSQUEDA;
     break;
   }
 
@@ -270,7 +270,7 @@ void switchCase()
   {
     
     backward();
-    delay(300);
+    delay(400);
     
     if (tatami_izquierdo > 250 && tatami_derecho > 250)
       movimientos = BUSQUEDA;
@@ -312,10 +312,6 @@ void ImprimirEstadoRobot(int movement)
 void setup()
 {
   Serial.begin(9600);
-  forward();
-  delay(5000);
-  backward();
-  delay(5000);
 }
 
 void loop()
