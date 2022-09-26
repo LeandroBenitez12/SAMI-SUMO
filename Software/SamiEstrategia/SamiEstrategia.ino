@@ -3,8 +3,12 @@
 #include <Tatami.h>
 #include <Sharp.h>
 
-#define DEBUG_TATAMI 1
-#define DEBUG_movimientos 1
+#define DEBUG 1
+#define DEBUG_STATE 1
+#define TICK_DEBUG 500
+unsigned long tiempo_actual = 0;
+
+
 //Sensors de tatami
 #define PIN_SENSOR_TATAMI_IZQ A0
 #define PIN_SENSOR_TATAMI_DER A1
@@ -33,10 +37,7 @@ int distSharpLeft;
 #define AVERAGE_SPEED 200;
 int righSpeed = 200;
 int leftSpeed = 200;
-
-
-
-
+//-------------------------------------------------------------
 
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
 Motor *mIzq = new Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, leftSpeed);
@@ -50,7 +51,8 @@ Sharp *sharpLeft = new Sharp(PIN_SENSOR_DISTANCIA_IZQUIERDO);
 Button *strategy = new  Button(PIN_BUTTON_STRATEGY);
 Button *start = new  Button(PIN_BUTTON_START);
 
-void forward() //voy hacia adelante
+//-------------------------------------------------------------
+void forward()
 {
   mDer->SetVelocidad(righSpeed);
   mIzq->SetVelocidad(leftSpeed);
@@ -58,7 +60,7 @@ void forward() //voy hacia adelante
   mIzq->Forward();
 }
 
-void backward() //voy hacia atras
+void backward()
 {
   mDer->SetVelocidad(righSpeed);
   mIzq->SetVelocidad(leftSpeed);
@@ -66,7 +68,7 @@ void backward() //voy hacia atras
   mIzq->Backward();
 }
  
-void left() //giro a la izquierda
+void left()
 {
   mDer->SetVelocidad(righSpeed);
   mIzq->SetVelocidad(leftSpeed);
@@ -75,7 +77,7 @@ void left() //giro a la izquierda
 }
 
 
-void right() //giro a la derecha
+void right()
 {
   mDer->SetVelocidad(righSpeed);
   mIzq->SetVelocidad(leftSpeed);
@@ -83,14 +85,48 @@ void right() //giro a la derecha
   mIzq->Forward();
 }
 
-void stopMotor() //freno
+void stopMotor()
 {
   mDer->SetVelocidad(0);
   mIzq->SetVelocidad(0);
   mDer->Stop();
   mIzq->Stop();
 }
+//-------------------------------------------------------------
+void printSensors()
+{
+  if (millis() > tiempo_actual + TICK_DEBUG)
+        {
+          Serial.print("Right tatami: ");
+          Serial.print(righTatamiRead);
+          Serial.print("  //  ");
+          Serial.print("Left tatami: ");
+          Serial.println(leftTatamiRead);
+          Serial.print("Right dist: ");
+          Serial.print(distSharpRigh);
+          Serial.print("  //  ");
+          Serial.print("Left dist: ");
+          Serial.println(distSharpLeft);
+        }
+}
 
+void printRobotStatus(int movement) 
+{
+  if (millis() > tiempo_actual + TICK_DEBUG)
+  {
+    String estado_robot = "";
+    if (movement == STANDBY) state = "SEARCH";
+    else if (movement == SEARCH) state = "SEARCH";
+    else if (movement == TURN_RIGHT) state = "TURN RIGHT";
+    else if (movement == TURN_LEFT) state = "TURN LEFT";
+    else if (movement == TATAMI_LIMIT) state = "TATAMI LIMIT";
+    else if (movement == ATTACK) state = "ATTACK";
+
+    Serial.print("State: ");
+    Serial.println(state);
+  }
+}
+//-------------------------------------------------------------
 enum strategy1{
   STANDBY,
   SEARCH,
@@ -101,7 +137,7 @@ enum strategy1{
 };
 int strategy1 = STANDBY;
 
-void movementLogic()
+void strategy()
 {
     switch (strategy1)
     {
@@ -178,17 +214,25 @@ void movementLogic()
     }
 
 }
+//-------------------------------------------------------------
 
 void setup()
 {
-    Serial.begin(9600);
+  Serial.begin(9600);
 }
 
-void loop() {
-
+void loop() 
+{
   distSharpRigh = sharpRight->SharpDist(n);
   distSharpLeft = sharpLeft->SharpDist(n);
   righTatamiRead = rightTatami->TatamiRead(n);
   leftTatamiRead = LeftTatami->TatamiRead(n);
-  movementLogic();
+
+  strategy();
+
+  if(DEBUG)
+  {
+    printSensors();
+    printRobotStatus(strategy1);
+  }
 }

@@ -1,11 +1,29 @@
-#define DEBUG_TATAMI 1
-#define DEBUG_movimientos 1
-//Sensors fo tatami
+#include <Button.h>
+#include <MotorSumo.h>
+#include <Tatami.h>
+#include <Sharp.h>
+
+#define DEBUG 1
+#define DEBUG_STATE 1
+#define TICK_DEBUG 500
+unsigned long tiempo_actual = 0;
+
+
+//Sensors de tatami
 #define PIN_SENSOR_TATAMI_IZQ A0
 #define PIN_SENSOR_TATAMI_DER A1
+int righTatamiRead;
+int leftTatamiRead;
+#define BORDE_TATAMI 300
+int n = 3;
+
 //sensor de distancia
 #define PIN_SENSOR_DISTANCIA_DERECHO A3
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO A4
+#define RIVAL 30
+int distSharpRigh;
+int distSharpLeft;
+
 // motor
 #define PIN_MOTOR_MR1 11 //DIR
 #define PIN_MOTOR_MR2PWM 10 //PWM
@@ -14,268 +32,211 @@
 #define PIN_BUTTON_START 2
 #define PIN_BUTTON_STRATEGY 3  //te ponen 
 #define PIN_BUZZER 5
-#define VELOCIDAD_DERECHA 100
-#define VELOCIDAD_IZQUIERDA 100 
-#define BORDE_TATAMI 250
-int tatami_derecho;
-int tatami_izquierdo;
-bool sensorIzquierdo;
-bool sensorDerecho;
-class Motor
-{
-    //atributos
-private:
-    int velocidad;
-    int pin_direccion;
-    int pin_pwm;
+#define SEARCH_SPEED 100
+#define ATTACK_SPEED 250
+#define AVERAGE_SPEED 200;
+int righSpeed = 200;
+int leftSpeed = 200;
+//-------------------------------------------------------------
 
-public:
+Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
+Motor *mIzq = new Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, leftSpeed);
 
-    Motor(int dir, int pwm, int vel){
-        pin_direccion = dir;
-        pin_pwm = pwm;
-        velocidad = vel;
+Tatami *rightTatami = new Tatami(PIN_SENSOR_TATAMI_DER);
+Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
 
-        pinMode(pin_direccion, OUTPUT);
-        pinMode(pin_pwm, OUTPUT);
-    }
-//metodos
-    void setVelocidad(int v){
-        velocidad=v;
-    } 
-    void forward (){
-        digitalWrite(pin_direccion, HIGH);
-        analogWrite(pin_pwm, velocidad);
-    }
-    void backward (){
-        digitalWrite(pin_direccion, LOW);
-        analogWrite(pin_pwm, velocidad);
-    }
-    void stop (){
-        digitalWrite(pin_direccion, LOW );
-        analogWrite(pin_pwm, 0);
-    } 
-          
-};
-class sensorTatami{
-private:
-    int pin;
+Sharp *sharpRight = new Sharp(PIN_SENSOR_DISTANCIA_DERECHO);
+Sharp *sharpLeft = new Sharp(PIN_SENSOR_DISTANCIA_IZQUIERDO);
 
-public:
-     sensorTatami(int p){
-        pin = p;
-        pinMode(pin, INPUT);
-    }
-    int leerSensorTatami(){
-        return analogRead(pin); 
-    }
-};
-class sensorDistancia{
-private:
-    int pin;
-
-public:
-     sensorDistancia(int p){
-        pin = p;
-        pinMode(pin, INPUT);
-    }
-    bool leerSensorDistancia(){
-        return digitalRead(pin);
-    }
-};
-class Buzzer {
-  private:
-    int pin;
-
-  public:
-    Buzzer(int p) {
-      pin = p;
-      pinMode(pin, OUTPUT);
-    }
-    void setPrenderBuzzer() {
-      digitalWrite(pin, HIGH);
-    }
-    void setApagarBuzzer() {
-      digitalWrite(pin, LOW);
-    }
-
-};
-class Button {
-  private:
-    int pin = 9;
-    bool state = HIGH;
-
-    //metodo
-  public:
-    Button(int p) {
-      pin = p;
-
-      pinMode(pin, INPUT_PULLUP);
-    }
-
-    //metodos o acciones
-    bool getIsPress() {
-      bool estado = digitalRead(pin);
-      return estado;
-    }
-
-};
-
-//Instancio los motores
-Motor m1 = Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, VELOCIDAD_DERECHA);
-Motor m2 = Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, VELOCIDAD_IZQUIERDA);
-//Instancio los sensors
-sensorTatami tatami_der = sensorTatami(PIN_SENSOR_TATAMI_DER);
-sensorTatami tatami_izq = sensorTatami(PIN_SENSOR_TATAMI_IZQ);
-
-sensorDistancia distanciaDerecha = sensorDistancia(PIN_SENSOR_DISTANCIA_DERECHO);
-sensorDistancia distanciaIzquierda = sensorDistancia(PIN_SENSOR_DISTANCIA_IZQUIERDO);
-
-//Instancio los buttons *punteros
 Button *strategy = new  Button(PIN_BUTTON_STRATEGY);
 Button *start = new  Button(PIN_BUTTON_START);
-//Instancio los buzzers
-Buzzer *b1 = new Buzzer(PIN_BUZZER);   
-//motores
-void forward() //voy hacia adelante
+
+//-------------------------------------------------------------
+void forward()
 {
-  m1.setVelocidad(230);
-  m2.setVelocidad(230);
-  m1.forward();
-  m2.forward();
+  mDer->SetVelocidad(righSpeed);
+  mIzq->SetVelocidad(leftSpeed);
+  mDer->Forward();
+  mIzq->Forward();
 }
 
-void backward() //voy hacia atras
+void backward()
 {
-  m1.setVelocidad(230);
-  m2.setVelocidad(230);
-  m1.backward();
-  m2.backward();
+  mDer->SetVelocidad(righSpeed);
+  mIzq->SetVelocidad(leftSpeed);
+  mDer->Backward();
+  mIzq->Backward();
 }
  
-void left() //giro a la izquierda
+void left()
 {
-  m1.setVelocidad(230);
-  m2.setVelocidad(230);
-  m1.forward();
-  m2.backward();
+  mDer->SetVelocidad(righSpeed);
+  mIzq->SetVelocidad(leftSpeed);
+  mDer->Forward();
+  mIzq->Backward();
 }
 
 
-void right() //giro a la derecha
+void right()
 {
-  m1.setVelocidad(230);
-  m2.setVelocidad(230);
-  m1.backward();
-  m2.forward();
+  mDer->SetVelocidad(righSpeed);
+  mIzq->SetVelocidad(leftSpeed);
+  mDer->Backward();
+  mIzq->Forward();
 }
 
-void stopMotor() //freno
+void stopMotor()
 {
-  m1.setVelocidad(0);
-  m2.setVelocidad(0);
-  m1.stop();
-  m2.stop();
+  mDer->SetVelocidad(0);
+  mIzq->SetVelocidad(0);
+  mDer->Stop();
+  mIzq->Stop();
 }
-//buzzers
-void BuzzerOn(){
-    b1->setPrenderBuzzer();
+//-------------------------------------------------------------
+void printSensors()
+{
+  if (millis() > tiempo_actual + TICK_DEBUG)
+        {
+          Serial.print("Right tatami: ");
+          Serial.print(righTatamiRead);
+          Serial.print("  //  ");
+          Serial.print("Left tatami: ");
+          Serial.println(leftTatamiRead);
+          Serial.print("Right dist: ");
+          Serial.print(distSharpRigh);
+          Serial.print("  //  ");
+          Serial.print("Left dist: ");
+          Serial.println(distSharpLeft);
+        }
 }
-void BuzzerOff(){
-    b1->setApagarBuzzer();
-}
-//botones
 
-enum{
+
+//-------------------------------------------------------------
+enum strategy1
+{
   STANDBY,
-  BUSQUEDA,
-  HAY_RIVAL,
-  HAY_BORDE,
+  SEARCH,
+  TURN_RIGHT,
+  TURN_LEFT,
+  TATAMI_LIMIT,
+  ATTACK
 };
-int movimientos = STANDBY;
-void switchCase(){
-switch (movimientos)
+int strategy1 = STANDBY;
+
+void movementLogic()
 {
-case STANDBY:
-{
-  bool boton_start = start->getIsPress();
-  if (!boton_start) {
-    delay(5000);
-    movimientos = BUSQUEDA; 
-  }
-  else{
-      stopMotor();
-  }
-  break;
-}  
-  
+    switch (strategy1)
+    {
+    case STANDBY:
+    {
+        bool boton_start = start->GetIsPress();
+        if (!boton_start) 
+        {
+          delay(5000);
+          strategy1 = SEARCH;
+        } 
+        else 
+        {
+          stopMotor();
+        }
+        break;
+      }
 
-case BUSQUEDA:{
-    
-    left();
-    if (tatami_izquierdo < BORDE_TATAMI ||  tatami_derecho < BORDE_TATAMI ) movimientos =HAY_BORDE;
-    if (sensorIzquierdo = true && sensorDerecho = true) movimientos = HAY_RIVAL;
-    
-    break;
-}
+    case SEARCH:
+    {
+        righSpeed = SEARCH_SPEED;
+        leftSpeed = SEARCH_SPEED;
+        right();
+        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) strategy1 = TURN_RIGHT;
+        if(distSharpRigh > RIVAL && leftTatamiRead <= RIVAL) strategy1 = TURN_LEFT;
+        if(distSharpRigh <= RIVAL && leftTatamiRead <= RIVAL) strategy1 = ATTACK;
+    }
 
-case HAY_RIVAL: {
-  forward();
-  if (tatami_izquierdo < BORDE_TATAMI && tatami_derecho < BORDE_TATAMI ) movimientos =HAY_BORDE;
-  
-  if (sensorIzquierdo != true || sensorDerecho != true) movimientos = BUSQUEDA;
+    case TURN_RIGHT:
+    {
+        righSpeed = SEARCH_SPEED;
+        leftSpeed = SEARCH_SPEED;
+        right();
+        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh > RIVAL && leftTatamiRead > RIVAL) strategy1 = SEARCH;
+        if(distSharpRigh > RIVAL && leftTatamiRead <= RIVAL) strategy1 = TURN_LEFT;
+        if(distSharpRigh <= RIVAL && leftTatamiRead <= RIVAL) strategy1 = ATTACK;
+    }
 
-  break;
-}
-}
-case HAY_BORDE: {
+    case TURN_LEFT:
+    {
+        righSpeed = SEARCH_SPEED;
+        leftSpeed = SEARCH_SPEED;
+        left();
+        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh > RIVAL && leftTatamiRead > RIVAL) strategy1 = SEARCH;
+        if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) strategy1 = TURN_RIGHT;
+        if(distSharpRigh <= RIVAL && leftTatamiRead <= RIVAL) strategy1 = ATTACK;
+    }
+
+    case ATTACK:
+    {
+        righSpeed = ATTACK_SPEED + (distSharpRigh * (-2));
+        leftSpeed = ATTACK_SPEED + (leftTatamiRead * (-2));
+        forward();
+        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh > RIVAL && leftTatamiRead > RIVAL) strategy1 = SEARCH;
+        if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) strategy1 = TURN_RIGHT;
+        if(distSharpRigh > RIVAL && leftTatamiRead <= RIVAL) strategy1 = TURN_LEFT;
+
+    }
+
+    case TATAMI_LIMIT: 
+    {
+    righSpeed = AVERAGE_SPEED;
+    leftSpeed = AVERAGE_SPEED;
     backward();
     delay(300);
-    if (tatami_izquierdo > BORDE_TATAMI && tatami_derecho > BORDE_TATAMI ) movimientos = BUSQUEDA;
-    if (sensorIzquierdo = true && sensorDerecho = true) movimientos = HAY_RIVAL;
-
+    strategy1 = SEARCH;
      break;
-}
+    }
+
+    }
+
 }
 
 //-------------------------------------------------------------
-void ImprimirEstadoRobot(int movement) 
+void printRobotStatus(int movement) 
 {
-  String estado_robot = "";
-  if (movement == STANDBY)
-    {estado_robot = "Stand By";}
-   else if (movement == BUSQUEDA)
-   {estado_robot = "Buscando";} 
-  else if (movement == HAY_RIVAL)
-    {estado_robot = "HAY RIVAL";}
-  else if (movement == HAY_BORDE)
-    {estado_robot = "HAY BORDE";}
+  if (millis() > tiempo_actual + TICK_DEBUG)
+  {
+    String state = "";
+    if (movement == STANDBY) state = "SEARCH";
+    else if (movement == SEARCH) state = "SEARCH";
+    else if (movement == TURN_RIGHT) state = "TURN RIGHT";
+    else if (movement == TURN_LEFT) state = "TURN LEFT";
+    else if (movement == TATAMI_LIMIT) state = "TATAMI LIMIT";
+    else if (movement == ATTACK) state = "ATTACK";
 
-
-  Serial.print("State: ");
-  Serial.print(estado_robot);
-  Serial.print(" || ");
- // Serial.print(sensorDer);
-  //Serial.println(" || ");
-}  
-void setup() {
-    Serial.begin(9600);
+    Serial.print("State: ");
+    Serial.println(state);
+  }
 }
 
-void loop(){
-    sensorIzquierdo = distanciaIzquierda.leerSensorDistancia();
-    sensorDerecho = distanciaDerecha.leerSensorDistancia();
-    tatami_derecho = tatami_der.leerSensorTatami();
-    tatami_izquierdo = tatami_izq .leerSensorTatami();
-  
-     switchCase();
-  
-     if(DEBUG_movimientos){
-    ImprimirEstadoRobot(movimientos);
-    }
-    if(DEBUG_TATAMI){
-    Serial.print(tatami_izquierdo);
-    Serial.print("||");
-    Serial.println(tatami_derecho);
-     }
+//-------------------------------------------------------------
+void setup()
+{
+  Serial.begin(9600);
+}
+
+void loop() 
+{
+  distSharpRigh = sharpRight->SharpDist(n);
+  distSharpLeft = sharpLeft->SharpDist(n);
+  righTatamiRead = rightTatami->TatamiRead(n);
+  leftTatamiRead = LeftTatami->TatamiRead(n);
+
+  movementLogic();
+
+  if(DEBUG)
+  {
+    printSensors();
+    printRobotStatus(strategy1);
+  }
 }
