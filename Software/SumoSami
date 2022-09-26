@@ -4,9 +4,9 @@
 #include <Sharp.h>
 
 #define DEBUG 1
-#define DEBUG_STATE 1
 #define TICK_DEBUG 500
 unsigned long tiempo_actual = 0;
+unsigned long tiempo_actual1 = 0;
 
 
 //Sensors de tatami
@@ -95,7 +95,7 @@ void stopMotor()
 //-------------------------------------------------------------
 void printSensors()
 {
-  if (millis() > tiempo_actual + TICK_DEBUG)
+  if (millis() > tiempo_actual1 + TICK_DEBUG)
         {
           Serial.print("Right tatami: ");
           Serial.print(righTatamiRead);

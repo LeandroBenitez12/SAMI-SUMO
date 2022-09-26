@@ -93,40 +93,7 @@ void stopMotor()
   mIzq->Stop();
 }
 //-------------------------------------------------------------
-void printSensors()
-{
-  if (millis() > tiempo_actual + TICK_DEBUG)
-        {
-          Serial.print("Right tatami: ");
-          Serial.print(righTatamiRead);
-          Serial.print("  //  ");
-          Serial.print("Left tatami: ");
-          Serial.println(leftTatamiRead);
-          Serial.print("Right dist: ");
-          Serial.print(distSharpRigh);
-          Serial.print("  //  ");
-          Serial.print("Left dist: ");
-          Serial.println(distSharpLeft);
-        }
-}
 
-void printRobotStatus(int movement) 
-{
-  if (millis() > tiempo_actual + TICK_DEBUG)
-  {
-    String estado_robot = "";
-    if (movement == STANDBY) state = "SEARCH";
-    else if (movement == SEARCH) state = "SEARCH";
-    else if (movement == TURN_RIGHT) state = "TURN RIGHT";
-    else if (movement == TURN_LEFT) state = "TURN LEFT";
-    else if (movement == TATAMI_LIMIT) state = "TATAMI LIMIT";
-    else if (movement == ATTACK) state = "ATTACK";
-
-    Serial.print("State: ");
-    Serial.println(state);
-  }
-}
-//-------------------------------------------------------------
 enum strategy1{
   STANDBY,
   SEARCH,
@@ -213,6 +180,41 @@ void strategy()
 
     }
 
+}
+//-------------------------------------------------------------
+
+void printSensors()
+{
+  if (millis() > tiempo_actual + TICK_DEBUG)
+        {
+          Serial.print("Right tatami: ");
+          Serial.print(righTatamiRead);
+          Serial.print("  //  ");
+          Serial.print("Left tatami: ");
+          Serial.println(leftTatamiRead);
+          Serial.print("Right dist: ");
+          Serial.print(distSharpRigh);
+          Serial.print("  //  ");
+          Serial.print("Left dist: ");
+          Serial.println(distSharpLeft);
+        }
+}
+
+void printRobotStatus(int movement) 
+{
+  if (millis() > tiempo_actual + TICK_DEBUG)
+  {
+    String estado_robot = "";
+    if (movement == STANDBY) state = "STANDBY";
+    else if (movement == SEARCH) state = "SEARCH";
+    else if (movement == TURN_RIGHT) state = "TURN RIGHT";
+    else if (movement == TURN_LEFT) state = "TURN LEFT";
+    else if (movement == TATAMI_LIMIT) state = "TATAMI LIMIT";
+    else if (movement == ATTACK) state = "ATTACK";
+
+    Serial.print("State: ");
+    Serial.println(state);
+  }
 }
 //-------------------------------------------------------------
 
