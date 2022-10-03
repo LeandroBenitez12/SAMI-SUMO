@@ -4,9 +4,9 @@
 #include <Sharp.h>
 
 #define DEBUG 1
+#define DEBUG_STATE 1
 #define TICK_DEBUG 500
 unsigned long tiempo_actual = 0;
-unsigned long tiempo_actual1 = 0;
 
 
 //Sensors de tatami
@@ -93,27 +93,8 @@ void stopMotor()
   mIzq->Stop();
 }
 //-------------------------------------------------------------
-void printSensors()
-{
-  if (millis() > tiempo_actual1 + TICK_DEBUG)
-        {
-          Serial.print("Right tatami: ");
-          Serial.print(righTatamiRead);
-          Serial.print("  //  ");
-          Serial.print("Left tatami: ");
-          Serial.println(leftTatamiRead);
-          Serial.print("Right dist: ");
-          Serial.print(distSharpRigh);
-          Serial.print("  //  ");
-          Serial.print("Left dist: ");
-          Serial.println(distSharpLeft);
-        }
-}
 
-
-//-------------------------------------------------------------
-enum strategy1
-{
+enum strategy1{
   STANDBY,
   SEARCH,
   TURN_RIGHT,
@@ -123,7 +104,7 @@ enum strategy1
 };
 int strategy1 = STANDBY;
 
-void movementLogic()
+void strategy()
 {
     switch (strategy1)
     {
@@ -200,14 +181,31 @@ void movementLogic()
     }
 
 }
-
 //-------------------------------------------------------------
+
+void printSensors()
+{
+  if (millis() > tiempo_actual + TICK_DEBUG)
+        {
+          Serial.print("Right tatami: ");
+          Serial.print(righTatamiRead);
+          Serial.print("  //  ");
+          Serial.print("Left tatami: ");
+          Serial.println(leftTatamiRead);
+          Serial.print("Right dist: ");
+          Serial.print(distSharpRigh);
+          Serial.print("  //  ");
+          Serial.print("Left dist: ");
+          Serial.println(distSharpLeft);
+        }
+}
+
 void printRobotStatus(int movement) 
 {
   if (millis() > tiempo_actual + TICK_DEBUG)
   {
-    String state = "";
-    if (movement == STANDBY) state = "SEARCH";
+    String estado_robot = "";
+    if (movement == STANDBY) state = "STANDBY";
     else if (movement == SEARCH) state = "SEARCH";
     else if (movement == TURN_RIGHT) state = "TURN RIGHT";
     else if (movement == TURN_LEFT) state = "TURN LEFT";
@@ -218,8 +216,8 @@ void printRobotStatus(int movement)
     Serial.println(state);
   }
 }
-
 //-------------------------------------------------------------
+
 void setup()
 {
   Serial.begin(9600);
@@ -232,7 +230,7 @@ void loop()
   righTatamiRead = rightTatami->TatamiRead(n);
   leftTatamiRead = LeftTatami->TatamiRead(n);
 
-  movementLogic();
+  strategy();
 
   if(DEBUG)
   {
