@@ -1,11 +1,12 @@
 #define DEBUG_TATAMI 1
 #define DEBUG_MOVIMIENTOS 1
+#define DEBUG_SHARP 0
 // Sensors fo tatami
-#define PIN_SENSOR_TATAMI_IZQ A6
+#define PIN_SENSOR_TATAMI_IZQ A0
 #define PIN_SENSOR_TATAMI_DER A1
 // sensor de distanciaa
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO A7
-#define PIN_SENSOR_DISTANCIA_DERECHO A0
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO A6
+#define PIN_SENSOR_DISTANCIA_DERECHO A7
 // motor
 #define PIN_MOTOR_MR1 11    // DIR
 #define PIN_MOTOR_MR2PWM 10 // PWM
@@ -305,17 +306,13 @@ void ImprimirEstadoRobot(int movement)
   Serial.print(estado_robot);
   Serial.print(" || ");
   Serial.print(sensorDerecho);
-  Serial.print(" || ");
-  Serial.print(sensorIzquierdo);
   Serial.println(" || ");
+  //Serial.print(sensorIzquierdo);
+  //Serial.println(" || ");
 }
 void setup()
 {
   Serial.begin(9600);
-  forward();
-  delay(5000);
-  backward();
-  delay(5000);
 }
 
 void loop()
@@ -334,11 +331,16 @@ void loop()
   {
     ImprimirEstadoRobot(movimientos);
   }
-
+  if (DEBUG_SHARP)
+  {
+    Serial.print(sensorIzquierdo);
+    Serial.print("|SHARP|");
+    Serial.println(sensorDerecho);
+  }
   if (DEBUG_TATAMI)
   {
     Serial.print(tatami_izquierdo);
-    Serial.print("||");
+    Serial.print("||QRE1113||");
     Serial.println(tatami_derecho);
   }
 }
