@@ -249,8 +249,8 @@ void switchCase()
   case BUSQUEDA:
   {
     left();
-    if (tatami_izquierdo < 250 || tatami_derecho < 250)
-      movimientos = HAY_BORDE;
+    /*if (tatami_izquierdo < 250 || tatami_derecho < 250)
+      movimientos = HAY_BORDE;*/
     if (sensorIzquierdo < 30 || sensorDerecho < 30) movimientos = HAY_RIVAL;
 
     break;
@@ -260,8 +260,8 @@ void switchCase()
   {
     
     forward();
-    if (tatami_izquierdo < 250 || tatami_derecho < 250)
-      movimientos = HAY_BORDE;
+    /*if (tatami_izquierdo < 250 || tatami_derecho < 250)
+      movimientos = HAY_BORDE;*/
     if (sensorIzquierdo > 30 && sensorDerecho > 30) movimientos = BUSQUEDA;
     break;
   }

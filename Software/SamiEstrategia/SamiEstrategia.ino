@@ -16,6 +16,7 @@ int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 300
 int n = 3;
+#define DELAY_BACK 200
 
 //sensor de distancia
 #define PIN_SENSOR_DISTANCIA_DERECHO A6
@@ -112,7 +113,7 @@ void strategya()
     case STANDBY:
     {
         boton_start = start->GetIsPress();
-        if (!boton_start) 
+        if (boton_start) 
         {
           delay(5000);
           strategy1 = SEARCH;
@@ -129,10 +130,11 @@ void strategya()
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         right();
-        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
-        if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) strategy1 = TURN_RIGHT;
-        if(distSharpRigh > RIVAL && leftTatamiRead <= RIVAL) strategy1 = TURN_LEFT;
-        if(distSharpRigh <= RIVAL && leftTatamiRead <= RIVAL) strategy1 = ATTACK;
+        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) strategy1 = TURN_RIGHT;
+        if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) strategy1 = TURN_LEFT;
+        if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) strategy1 = ATTACK;
+    break;
     }
 
     case TURN_RIGHT:
@@ -140,10 +142,11 @@ void strategya()
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         right();
-        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
-        if(distSharpRigh > RIVAL && leftTatamiRead > RIVAL) strategy1 = SEARCH;
-        if(distSharpRigh > RIVAL && leftTatamiRead <= RIVAL) strategy1 = TURN_LEFT;
-        if(distSharpRigh <= RIVAL && leftTatamiRead <= RIVAL) strategy1 = ATTACK;
+        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) strategy1 = SEARCH;
+        if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) strategy1 = TURN_LEFT;
+        if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) strategy1 = ATTACK;
+    break;
     }
 
     case TURN_LEFT:
@@ -151,22 +154,23 @@ void strategya()
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         left();
-        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
-        if(distSharpRigh > RIVAL && leftTatamiRead > RIVAL) strategy1 = SEARCH;
-        if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) strategy1 = TURN_RIGHT;
-        if(distSharpRigh <= RIVAL && leftTatamiRead <= RIVAL) strategy1 = ATTACK;
+        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) strategy1 = SEARCH;
+        if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) strategy1 = TURN_RIGHT;
+        if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) strategy1 = ATTACK;
+    break;
     }
 
     case ATTACK:
     {
         righSpeed = ATTACK_SPEED + (distSharpRigh * (-2));
-        leftSpeed = ATTACK_SPEED + (leftTatamiRead * (-2));
+        leftSpeed = ATTACK_SPEED + (distSharpLeft * (-2));
         forward();
-        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
-        if(distSharpRigh > RIVAL && leftTatamiRead > RIVAL) strategy1 = SEARCH;
-        if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) strategy1 = TURN_RIGHT;
-        if(distSharpRigh > RIVAL && leftTatamiRead <= RIVAL) strategy1 = TURN_LEFT;
-
+        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) strategy1 = SEARCH;
+        if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) strategy1 = TURN_RIGHT;
+        if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) strategy1 = TURN_LEFT;
+    break;
     }
 
     case TATAMI_LIMIT: 
@@ -174,9 +178,9 @@ void strategya()
     righSpeed = AVERAGE_SPEED;
     leftSpeed = AVERAGE_SPEED;
     backward();
-    delay(300);
+    delay(DELAY_BACK);
     strategy1 = SEARCH;
-     break;
+    break;
     }
 
     }
@@ -215,6 +219,8 @@ void printRobotStatus(int movement)
 
     Serial.print("State: ");
     Serial.println(state);
+    Serial.print(" || ");
+    Serial.println( boton_start);
   }
 }
 //-------------------------------------------------------------
@@ -222,6 +228,17 @@ void printRobotStatus(int movement)
 void setup()
 {
   Serial.begin(9600);
+  /*forward();
+  delay(5000);
+  backward();
+  delay(5000);
+  left();
+  delay(3000);
+  right();
+  delay(3000);
+  stopMotor();
+  delay(3000);
+  */
 }
 
 void loop() 
