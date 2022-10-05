@@ -18,8 +18,8 @@ int leftTatamiRead;
 int n = 3;
 
 //sensor de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO A3
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO A4
+#define PIN_SENSOR_DISTANCIA_DERECHO A6
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO A7
 #define RIVAL 30
 int distSharpRigh;
 int distSharpLeft;
@@ -30,13 +30,14 @@ int distSharpLeft;
 #define PIN_MOTOR_ML1 9 //DIR
 #define PIN_MOTOR_ML2PWM 6 //PWM
 #define PIN_BUTTON_START 2
+bool boton_start;
 #define PIN_BUTTON_STRATEGY 3  //te ponen 
 #define PIN_BUZZER 5
 #define SEARCH_SPEED 100
-#define ATTACK_SPEED 250
-#define AVERAGE_SPEED 200;
-int righSpeed = 200;
-int leftSpeed = 200;
+#define ATTACK_SPEED 150
+#define AVERAGE_SPEED 135;
+int righSpeed = 100;
+int leftSpeed = 100;
 //-------------------------------------------------------------
 
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
@@ -94,7 +95,7 @@ void stopMotor()
 }
 //-------------------------------------------------------------
 
-enum strategy1{
+enum strategy{
   STANDBY,
   SEARCH,
   TURN_RIGHT,
@@ -104,13 +105,13 @@ enum strategy1{
 };
 int strategy1 = STANDBY;
 
-void strategy()
+void strategya()
 {
     switch (strategy1)
     {
     case STANDBY:
     {
-        bool boton_start = start->GetIsPress();
+        boton_start = start->GetIsPress();
         if (!boton_start) 
         {
           delay(5000);
@@ -187,15 +188,15 @@ void printSensors()
 {
   if (millis() > tiempo_actual + TICK_DEBUG)
         {
-          Serial.print("Right tatami: ");
+          Serial.print("  Right tatami: ");
           Serial.print(righTatamiRead);
           Serial.print("  //  ");
-          Serial.print("Left tatami: ");
-          Serial.println(leftTatamiRead);
-          Serial.print("Right dist: ");
+          Serial.print("  Left tatami: ");
+          Serial.print(leftTatamiRead);
+          Serial.print("  Right dist: ");
           Serial.print(distSharpRigh);
           Serial.print("  //  ");
-          Serial.print("Left dist: ");
+          Serial.print("  Left dist: ");
           Serial.println(distSharpLeft);
         }
 }
@@ -204,13 +205,13 @@ void printRobotStatus(int movement)
 {
   if (millis() > tiempo_actual + TICK_DEBUG)
   {
-    String estado_robot = "";
-    if (movement == STANDBY) state = "STANDBY";
-    else if (movement == SEARCH) state = "SEARCH";
-    else if (movement == TURN_RIGHT) state = "TURN RIGHT";
-    else if (movement == TURN_LEFT) state = "TURN LEFT";
-    else if (movement == TATAMI_LIMIT) state = "TATAMI LIMIT";
-    else if (movement == ATTACK) state = "ATTACK";
+    String state = "";
+    if (movement == STANDBY) state = " STANDBY";
+    else if (movement == SEARCH) state = " SEARCH";
+    else if (movement == TURN_RIGHT) state = " TURN RIGHT";
+    else if (movement == TURN_LEFT) state = " TURN LEFT";
+    else if (movement == TATAMI_LIMIT) state = " TATAMI LIMIT";
+    else if (movement == ATTACK) state = " ATTACK";
 
     Serial.print("State: ");
     Serial.println(state);
@@ -230,7 +231,7 @@ void loop()
   righTatamiRead = rightTatami->TatamiRead(n);
   leftTatamiRead = LeftTatami->TatamiRead(n);
 
-  strategy();
+  strategya();
 
   if(DEBUG)
   {

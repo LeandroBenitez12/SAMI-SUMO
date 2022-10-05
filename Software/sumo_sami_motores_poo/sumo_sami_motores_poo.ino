@@ -251,7 +251,7 @@ void switchCase()
     left();
     if (tatami_izquierdo < 250 || tatami_derecho < 250)
       movimientos = HAY_BORDE;
-    if (sensorIzquierdo <= 30 || sensorDerecho <= 30) movimientos = HAY_RIVAL;
+    if (sensorIzquierdo < 30 || sensorDerecho < 30) movimientos = HAY_RIVAL;
 
     break;
   }
