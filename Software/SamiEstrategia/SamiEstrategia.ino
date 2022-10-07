@@ -3,8 +3,7 @@
 #include <Tatami.h>
 #include <Sharp.h>
 
-#define DEBUG 1
-#define DEBUG_STATE 1
+#define DEBUG 0
 #define TICK_DEBUG 500
 unsigned long tiempo_actual = 0;
 
@@ -14,14 +13,14 @@ unsigned long tiempo_actual = 0;
 #define PIN_SENSOR_TATAMI_DER A1
 int righTatamiRead;
 int leftTatamiRead;
-#define BORDE_TATAMI 300
+#define BORDE_TATAMI 250
 int n = 3;
 #define DELAY_BACK 200
 
 //sensor de distancia
 #define PIN_SENSOR_DISTANCIA_DERECHO A6
 #define PIN_SENSOR_DISTANCIA_IZQUIERDO A7
-#define RIVAL 30
+#define RIVAL 55
 int distSharpRigh;
 int distSharpLeft;
 
@@ -30,15 +29,15 @@ int distSharpLeft;
 #define PIN_MOTOR_MR2PWM 10 //PWM
 #define PIN_MOTOR_ML1 9 //DIR
 #define PIN_MOTOR_ML2PWM 6 //PWM
-#define PIN_BUTTON_START 2
+#define PIN_BUTTON_START 3
 bool boton_start;
-#define PIN_BUTTON_STRATEGY 3  //te ponen 
+#define PIN_BUTTON_STRATEGY 2  //te ponen 
 #define PIN_BUZZER 5
 #define SEARCH_SPEED 100
-#define ATTACK_SPEED 150
-#define AVERAGE_SPEED 135;
-int righSpeed = 100;
-int leftSpeed = 100;
+#define ATTACK_SPEED 200
+#define AVERAGE_SPEED 250;
+int righSpeed = 150;
+int leftSpeed = 150;
 //-------------------------------------------------------------
 
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
@@ -163,8 +162,8 @@ void strategya()
 
     case ATTACK:
     {
-        righSpeed = ATTACK_SPEED + (distSharpRigh * (-2));
-        leftSpeed = ATTACK_SPEED + (distSharpLeft * (-2));
+        righSpeed = ATTACK_SPEED; //+ (distSharpRigh * (-2));
+        leftSpeed = ATTACK_SPEED; //+ (distSharpLeft * (-2));
         forward();
         if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) strategy1 = TATAMI_LIMIT;
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) strategy1 = SEARCH;
@@ -179,7 +178,8 @@ void strategya()
     leftSpeed = AVERAGE_SPEED;
     backward();
     delay(DELAY_BACK);
-    strategy1 = SEARCH;
+    if(leftTatamiRead > BORDE_TATAMI && righTatamiRead > BORDE_TATAMI) strategy1 = SEARCH;
+    
     break;
     }
 
