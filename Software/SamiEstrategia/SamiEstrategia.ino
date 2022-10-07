@@ -3,8 +3,7 @@
 #include <Tatami.h>
 #include <Sharp.h>
 
-#define DEBUG 1
-#define DEBUG_STATE 1
+#define DEBUG 0
 #define TICK_DEBUG 500
 unsigned long tiempo_actual = 0;
 
@@ -14,13 +13,14 @@ unsigned long tiempo_actual = 0;
 #define PIN_SENSOR_TATAMI_DER A1
 int righTatamiRead;
 int leftTatamiRead;
-#define BORDE_TATAMI 300
+#define BORDE_TATAMI 250
 int n = 3;
+#define DELAY_BACK 200
 
 //sensor de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO A3
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO A4
-#define RIVAL 30
+#define PIN_SENSOR_DISTANCIA_DERECHO A6
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO A7
+#define RIVAL 55
 int distSharpRigh;
 int distSharpLeft;
 
@@ -29,14 +29,15 @@ int distSharpLeft;
 #define PIN_MOTOR_MR2PWM 10 //PWM
 #define PIN_MOTOR_ML1 9 //DIR
 #define PIN_MOTOR_ML2PWM 6 //PWM
-#define PIN_BUTTON_START 2
-#define PIN_BUTTON_STRATEGY 3  //te ponen 
+#define PIN_BUTTON_START 3
+bool boton_start;
+#define PIN_BUTTON_STRATEGY 2  //te ponen 
 #define PIN_BUZZER 5
 #define SEARCH_SPEED 100
-#define ATTACK_SPEED 250
-#define AVERAGE_SPEED 200;
-int righSpeed = 200;
-int leftSpeed = 200;
+#define ATTACK_SPEED 200
+#define AVERAGE_SPEED 250;
+int righSpeed = 150;
+int leftSpeed = 150;
 //-------------------------------------------------------------
 
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
@@ -94,7 +95,7 @@ void stopMotor()
 }
 //-------------------------------------------------------------
 
-enum strategy1{
+enum strategy{
   STANDBY,
   SEARCH,
   TURN_RIGHT,
@@ -104,14 +105,14 @@ enum strategy1{
 };
 int strategy1 = STANDBY;
 
-void strategy()
+void strategya()
 {
     switch (strategy1)
     {
     case STANDBY:
     {
-        bool boton_start = start->GetIsPress();
-        if (!boton_start) 
+        boton_start = start->GetIsPress();
+        if (boton_start) 
         {
           delay(5000);
           strategy1 = SEARCH;
@@ -128,10 +129,11 @@ void strategy()
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         right();
-        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
-        if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) strategy1 = TURN_RIGHT;
-        if(distSharpRigh > RIVAL && leftTatamiRead <= RIVAL) strategy1 = TURN_LEFT;
-        if(distSharpRigh <= RIVAL && leftTatamiRead <= RIVAL) strategy1 = ATTACK;
+        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) strategy1 = TURN_RIGHT;
+        if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) strategy1 = TURN_LEFT;
+        if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) strategy1 = ATTACK;
+    break;
     }
 
     case TURN_RIGHT:
@@ -139,10 +141,11 @@ void strategy()
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         right();
-        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
-        if(distSharpRigh > RIVAL && leftTatamiRead > RIVAL) strategy1 = SEARCH;
-        if(distSharpRigh > RIVAL && leftTatamiRead <= RIVAL) strategy1 = TURN_LEFT;
-        if(distSharpRigh <= RIVAL && leftTatamiRead <= RIVAL) strategy1 = ATTACK;
+        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) strategy1 = SEARCH;
+        if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) strategy1 = TURN_LEFT;
+        if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) strategy1 = ATTACK;
+    break;
     }
 
     case TURN_LEFT:
@@ -150,22 +153,23 @@ void strategy()
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         left();
-        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
-        if(distSharpRigh > RIVAL && leftTatamiRead > RIVAL) strategy1 = SEARCH;
-        if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) strategy1 = TURN_RIGHT;
-        if(distSharpRigh <= RIVAL && leftTatamiRead <= RIVAL) strategy1 = ATTACK;
+        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) strategy1 = SEARCH;
+        if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) strategy1 = TURN_RIGHT;
+        if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) strategy1 = ATTACK;
+    break;
     }
 
     case ATTACK:
     {
-        righSpeed = ATTACK_SPEED + (distSharpRigh * (-2));
-        leftSpeed = ATTACK_SPEED + (leftTatamiRead * (-2));
+        righSpeed = ATTACK_SPEED; //+ (distSharpRigh * (-2));
+        leftSpeed = ATTACK_SPEED; //+ (distSharpLeft * (-2));
         forward();
-        if(leftTatamiRead < 250 || righTatamiRead < 250) strategy1 = TATAMI_LIMIT;
-        if(distSharpRigh > RIVAL && leftTatamiRead > RIVAL) strategy1 = SEARCH;
-        if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) strategy1 = TURN_RIGHT;
-        if(distSharpRigh > RIVAL && leftTatamiRead <= RIVAL) strategy1 = TURN_LEFT;
-
+        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) strategy1 = TATAMI_LIMIT;
+        if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) strategy1 = SEARCH;
+        if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) strategy1 = TURN_RIGHT;
+        if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) strategy1 = TURN_LEFT;
+    break;
     }
 
     case TATAMI_LIMIT: 
@@ -173,9 +177,10 @@ void strategy()
     righSpeed = AVERAGE_SPEED;
     leftSpeed = AVERAGE_SPEED;
     backward();
-    delay(300);
-    strategy1 = SEARCH;
-     break;
+    delay(DELAY_BACK);
+    if(leftTatamiRead > BORDE_TATAMI && righTatamiRead > BORDE_TATAMI) strategy1 = SEARCH;
+    
+    break;
     }
 
     }
@@ -187,15 +192,15 @@ void printSensors()
 {
   if (millis() > tiempo_actual + TICK_DEBUG)
         {
-          Serial.print("Right tatami: ");
+          Serial.print("  Right tatami: ");
           Serial.print(righTatamiRead);
           Serial.print("  //  ");
-          Serial.print("Left tatami: ");
-          Serial.println(leftTatamiRead);
-          Serial.print("Right dist: ");
+          Serial.print("  Left tatami: ");
+          Serial.print(leftTatamiRead);
+          Serial.print("  Right dist: ");
           Serial.print(distSharpRigh);
           Serial.print("  //  ");
-          Serial.print("Left dist: ");
+          Serial.print("  Left dist: ");
           Serial.println(distSharpLeft);
         }
 }
@@ -204,16 +209,18 @@ void printRobotStatus(int movement)
 {
   if (millis() > tiempo_actual + TICK_DEBUG)
   {
-    String estado_robot = "";
-    if (movement == STANDBY) state = "STANDBY";
-    else if (movement == SEARCH) state = "SEARCH";
-    else if (movement == TURN_RIGHT) state = "TURN RIGHT";
-    else if (movement == TURN_LEFT) state = "TURN LEFT";
-    else if (movement == TATAMI_LIMIT) state = "TATAMI LIMIT";
-    else if (movement == ATTACK) state = "ATTACK";
+    String state = "";
+    if (movement == STANDBY) state = " STANDBY";
+    else if (movement == SEARCH) state = " SEARCH";
+    else if (movement == TURN_RIGHT) state = " TURN RIGHT";
+    else if (movement == TURN_LEFT) state = " TURN LEFT";
+    else if (movement == TATAMI_LIMIT) state = " TATAMI LIMIT";
+    else if (movement == ATTACK) state = " ATTACK";
 
     Serial.print("State: ");
     Serial.println(state);
+    Serial.print(" || ");
+    Serial.println( boton_start);
   }
 }
 //-------------------------------------------------------------
@@ -221,6 +228,17 @@ void printRobotStatus(int movement)
 void setup()
 {
   Serial.begin(9600);
+  /*forward();
+  delay(5000);
+  backward();
+  delay(5000);
+  left();
+  delay(3000);
+  right();
+  delay(3000);
+  stopMotor();
+  delay(3000);
+  */
 }
 
 void loop() 
@@ -230,7 +248,7 @@ void loop()
   righTatamiRead = rightTatami->TatamiRead(n);
   leftTatamiRead = LeftTatami->TatamiRead(n);
 
-  strategy();
+  strategya();
 
   if(DEBUG)
   {
