@@ -3,7 +3,7 @@
 #include <Tatami.h>
 #include <Sharp.h>
 
-#define DEBUG 0
+#define DEBUG 1
 #define TICK_DEBUG 500
 unsigned long tiempo_actual = 0;
 
@@ -15,12 +15,12 @@ int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 250
 int n = 3;
-#define DELAY_BACK 200
+#define DELAY_BACK 100
 
 //sensor de distancia
 #define PIN_SENSOR_DISTANCIA_DERECHO A6
 #define PIN_SENSOR_DISTANCIA_IZQUIERDO A7
-#define RIVAL 15
+#define RIVAL 30
 int distSharpRigh;
 int distSharpLeft;
 
@@ -33,11 +33,11 @@ int distSharpLeft;
 bool boton_start;
 #define PIN_BUTTON_STRATEGY 2  //te ponen 
 #define PIN_BUZZER 5
-#define SEARCH_SPEED 150
+#define SEARCH_SPEED 50
 #define ATTACK_SPEED 255
-#define AVERAGE_SPEED 180;
-int righSpeed = 180;
-int leftSpeed = 180;
+#define AVERAGE_SPEED 250;
+int righSpeed = 150;
+int leftSpeed = 150;
 //-------------------------------------------------------------
 
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
