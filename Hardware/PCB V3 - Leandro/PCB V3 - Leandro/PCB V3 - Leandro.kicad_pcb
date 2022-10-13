@@ -224,9 +224,9 @@
       (net 4 "/SCL") (pinfunction "SCL") (pintype "input") (tstamp 73b8bf8b-9023-468f-b68f-87c543559b62))
     (pad "4" thru_hole oval (at 4 -10.6 90) (size 2 1.6) (drill 1) (layers *.Cu *.Mask)
       (net 5 "/SDA") (pinfunction "SDA") (pintype "input") (tstamp 0c6be980-ffff-408c-b6aa-b3ba1f958afb))
-    (model "${KICAD6_3DMODEL_DIR}/128x64_I2C_OLEDDisplay_Adafruit.wrl"
+    (model "C:/Users/juana/Dropbox/2021 - 5to 6ta Diseño Asistido/Leandro Benitez/LIBRERIAS_TEC_2.0/Librerias-Kicad-master/EESTN5.3dshapes/128x64_I2C_OLEDDisplay_Adafruit.wrl"
       (offset (xyz 0 0 0))
-      (scale (xyz 1 1 1))
+      (scale (xyz 1 1 1.5))
       (rotate (xyz 0 0 0))
     )
   )
@@ -683,7 +683,7 @@
       (net 1 "/BUZZER") (pinfunction "-") (pintype "passive") (tstamp 5a185cc5-4dfc-48da-827e-b7d99336b393))
     (pad "2" thru_hole oval locked (at 1.27 0) (size 1.524 2.19964) (drill 1.00076) (layers *.Cu *.Mask "F.SilkS")
       (net 2 "GND") (pinfunction "+") (pintype "passive") (tstamp 7c59a313-c9fa-4b13-8fdf-324c0ff29a29))
-    (model "pin_strip_2.wrl"
+    (model "C:/Users/juana/Dropbox/2021 - 5to 6ta Diseño Asistido/Leandro Benitez/LIBRERIAS_TEC_2.0/Librerias-Kicad-master/EESTN5.3dshapes/pin_strip_2.wrl"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz 0 0 0))
@@ -718,7 +718,7 @@
       (net 3 "+5V") (pinfunction "P2") (pintype "passive") (tstamp aca4de92-9c41-4c2b-9afa-540d02dafa1c))
     (pad "3" thru_hole oval locked (at 2.54 0 180) (size 2 2) (drill 1) (layers *.Cu *.Mask "F.SilkS")
       (net 2 "GND") (pinfunction "P3") (pintype "passive") (tstamp d7269d2a-b8c0-422d-8f25-f79ea31bf75e))
-    (model "Pin_Strip_3_2.54.wrl"
+    (model "C:/Users/juana/Dropbox/2021 - 5to 6ta Diseño Asistido/Stecatto/LIBRERIAS_TEC_2.0/Librerias-Kicad-master/EESTN5.3dshapes/Pin_Strip_3_2.54.wrl"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz 0 0 0))
