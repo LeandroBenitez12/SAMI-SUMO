@@ -1,5 +1,7 @@
 #define PIN_BUTTON_START 34
+#define PIN_BUTTON_STRATEGY 35
 bool boton_start;
+bool boton_strategy;
 /*#include <Button.h>
 
 
@@ -9,7 +11,7 @@ Button *start = new  Button(PIN_BUTTON_START);
 class Button
 {
 private:
-  int pin = 9;
+  int pin;
   bool state = HIGH;
 
   // metodo
@@ -30,6 +32,7 @@ public:
 };
 
 Button *start = new Button(PIN_BUTTON_START);
+Button *strategy = new Button(PIN_BUTTON_STRATEGY);
 
 void setup()
 {
@@ -38,12 +41,9 @@ void setup()
 void loop()
 {
     boton_start = start->getIsPress();
-    if (!boton_start)
-    {
-      Serial.println("SI");
-    }
-    else
-    {
-      Serial.println("NO");
-    }
+    boton_strategy = strategy->getIsPress();
+
+    Serial.print(boton_start);
+    Serial.print("  ||  ");
+    Serial.println(boton_strategy);
 }
