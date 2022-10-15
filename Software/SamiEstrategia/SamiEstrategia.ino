@@ -3,14 +3,15 @@
 #include <Tatami.h>
 #include <Sharp.h>
 
-#define DEBUG 1
+#define DEBUG_MODOS 0
+#define DEBUG_SENSORES 0
 #define TICK_DEBUG 500
 unsigned long tiempo_actual = 0;
 
 
 //Sensors de tatami
-#define PIN_SENSOR_TATAMI_IZQ A0
-#define PIN_SENSOR_TATAMI_DER A1
+#define PIN_SENSOR_TATAMI_IZQ 26
+#define PIN_SENSOR_TATAMI_DER 27
 int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 250
@@ -18,21 +19,22 @@ int n = 3;
 #define DELAY_BACK 100
 
 //sensor de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO A6
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO A7
+#define PIN_SENSOR_DISTANCIA_DERECHO 25
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO 33
 #define RIVAL 30
 int distSharpRigh;
 int distSharpLeft;
 
 // motor
-#define PIN_MOTOR_MR1 11 //DIR
-#define PIN_MOTOR_MR2PWM 10 //PWM
-#define PIN_MOTOR_ML1 9 //DIR
-#define PIN_MOTOR_ML2PWM 6 //PWM
-#define PIN_BUTTON_START 3
+#define PIN_MOTOR_MR1 21 //DIR
+#define PIN_MOTOR_MR2PWM 22 //PWM
+#define PIN_MOTOR_ML1 19 //DIR
+#define PIN_MOTOR_ML2PWM 18 //PWM
+#define PIN_BUTTON_START 34
+#define PIN_BUTTON_STRATEGY 35 //te ponen 
+#define PIN_BUZZER 23
 bool boton_start;
-#define PIN_BUTTON_STRATEGY 2  //te ponen 
-#define PIN_BUZZER 5
+bool boton_strategy;
 #define SEARCH_SPEED 50
 #define ATTACK_SPEED 255
 #define AVERAGE_SPEED 250;
@@ -111,13 +113,17 @@ void estrategia()
     {
     case STANDBY:
     {
+      boton_start = start->getIsPress();
+      boton_strategy = strategy->getIsPress();
+
+      if (boton_start){
         mode = SEARCH;
+      }
+      else stopMotor();
+        
         
         break;
         }
-     
-    
-      
 
     case SEARCH:
     {
@@ -130,7 +136,7 @@ void estrategia()
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) mode = ATTACK;
     break;
     }
-
+  
     case TURN_RIGHT:
     {
         righSpeed = SEARCH_SPEED;
@@ -247,9 +253,13 @@ void loop()
 
   estrategia();
 
-  if(DEBUG)
+  if(DEBUG_SENSORES)
   {
     printSensors();
+  }
+  if(DEBUG_MODOS)
+  {
     printRobotStatus(mode);
   }
+  
 }
