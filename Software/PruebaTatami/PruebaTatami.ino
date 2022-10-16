@@ -1,8 +1,8 @@
 #include <Tatami.h>
 
 //Sensors de tatami
-#define PIN_SENSOR_TATAMI_IZQ A0
-#define PIN_SENSOR_TATAMI_DER A1
+#define PIN_SENSOR_TATAMI_IZQ 32
+#define PIN_SENSOR_TATAMI_DER 33
 int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 300
@@ -28,10 +28,10 @@ void loop()
     {
         if (millis() > tiempo_actual + TICK_DEBUG)
         {
-            Serial.print("Right tatami: ")
-            Serial.println(righTatamiRead)
-            Serial.print("Left tatami: ")
-            Serial.println(leftTatamiRead)
+            Serial.print("Right tatami: ");
+            Serial.println(righTatamiRead);
+            Serial.print("Left tatami: ");
+            Serial.println(leftTatamiRead);
         }
 
     }

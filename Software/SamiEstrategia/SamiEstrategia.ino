@@ -9,35 +9,39 @@ unsigned long tiempo_actual = 0;
 
 
 //Sensors de tatami
-#define PIN_SENSOR_TATAMI_IZQ A0
-#define PIN_SENSOR_TATAMI_DER A1
+#define PIN_SENSOR_TATAMI_IZQ 26
+#define PIN_SENSOR_TATAMI_DER 27
 int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 250
 int n = 3;
-#define DELAY_BACK 100
+#define DELAY_BACK 70
 
 //sensor de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO A6
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO A7
-#define RIVAL 30
+#define PIN_SENSOR_DISTANCIA_DERECHO 32
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO 33
 int distSharpRigh;
 int distSharpLeft;
+#define RIVAL 30
 
 // motor
-#define PIN_MOTOR_MR1 11 //DIR
-#define PIN_MOTOR_MR2PWM 10 //PWM
-#define PIN_MOTOR_ML1 9 //DIR
-#define PIN_MOTOR_ML2PWM 6 //PWM
-#define PIN_BUTTON_START 3
-bool boton_start;
-#define PIN_BUTTON_STRATEGY 2  //te ponen 
-#define PIN_BUZZER 5
-#define SEARCH_SPEED 50
-#define ATTACK_SPEED 255
-#define AVERAGE_SPEED 250;
+#define PIN_MOTOR_MR1 22 //DIR
+#define PIN_MOTOR_MR2PWM 21 //PWM
+#define PIN_MOTOR_ML1 19 //DIR
+#define PIN_MOTOR_ML2PWM 18 //PWM
+//velocidades
+#define SEARCH_SPEED 30
+#define ATTACK_SPEED 120
+#define AVERAGE_SPEED 120;
 int righSpeed = 150;
 int leftSpeed = 150;
+//buttons
+#define PIN_BUTTON_START 34
+bool boton_start;
+#define PIN_BUTTON_STRATEGY 35
+//buzzer
+#define PIN_BUZZER 23
+
 //-------------------------------------------------------------
 
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
