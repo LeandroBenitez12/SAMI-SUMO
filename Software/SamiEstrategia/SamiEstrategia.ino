@@ -3,7 +3,8 @@
 #include <Tatami.h>
 #include <Sharp.h>
 
-#define DEBUG 1
+#define DEBUG_MODES 0
+#define DEBUG_SENSORES 0
 #define TICK_DEBUG 500
 unsigned long tiempo_actual = 0;
 
@@ -11,7 +12,7 @@ unsigned long tiempo_actual = 0;
 //Sensors de tatami
 #define PIN_SENSOR_TATAMI_IZQ 26
 #define PIN_SENSOR_TATAMI_DER 27
-int righTatamiRead;
+int rightTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 250
 int n = 3;
@@ -20,7 +21,7 @@ int n = 3;
 //sensor de distancia
 #define PIN_SENSOR_DISTANCIA_DERECHO 32
 #define PIN_SENSOR_DISTANCIA_IZQUIERDO 33
-int distSharpRigh;
+int distSharpRight;
 int distSharpLeft;
 #define RIVAL 30
 
@@ -33,7 +34,7 @@ int distSharpLeft;
 #define SEARCH_SPEED 30
 #define ATTACK_SPEED 120
 #define AVERAGE_SPEED 120;
-int righSpeed = 150;
+int rightSpeed = 150;
 int leftSpeed = 150;
 //buttons
 #define PIN_BUTTON_START 34
@@ -44,7 +45,7 @@ bool boton_start;
 
 //-------------------------------------------------------------
 
-Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
+Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, rightSpeed);
 Motor *mIzq = new Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, leftSpeed);
 
 Tatami *rightTatami = new Tatami(PIN_SENSOR_TATAMI_DER);
@@ -59,7 +60,7 @@ Button *start = new  Button(PIN_BUTTON_START);
 //-------------------------------------------------------------
 void forward()
 {
-  mDer->SetVelocidad(righSpeed);
+  mDer->SetVelocidad(rightSpeed);
   mIzq->SetVelocidad(leftSpeed);
   mDer->Forward();
   mIzq->Forward();
@@ -67,7 +68,7 @@ void forward()
 
 void backward()
 {
-  mDer->SetVelocidad(righSpeed);
+  mDer->SetVelocidad(rightSpeed);
   mIzq->SetVelocidad(leftSpeed);
   mDer->Backward();
   mIzq->Backward();
@@ -75,7 +76,7 @@ void backward()
  
 void left()
 {
-  mDer->SetVelocidad(righSpeed);
+  mDer->SetVelocidad(rightSpeed);
   mIzq->SetVelocidad(leftSpeed);
   mDer->Forward();
   mIzq->Backward();
@@ -84,7 +85,7 @@ void left()
 
 void right()
 {
-  mDer->SetVelocidad(righSpeed);
+  mDer->SetVelocidad(rightSpeed);
   mIzq->SetVelocidad(leftSpeed);
   mDer->Backward();
   mIzq->Forward();
@@ -125,59 +126,59 @@ void estrategia()
 
     case SEARCH:
     {
-        righSpeed = SEARCH_SPEED;
+        rightSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         right();
-        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
-        if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) mode = TURN_RIGHT;
-        if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) mode = TURN_LEFT;
-        if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) mode = ATTACK;
+        if(leftTatamiRead < BORDE_TATAMI || rightTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
+        if(distSharpRight <= RIVAL && distSharpLeft > RIVAL) mode = TURN_RIGHT;
+        if(distSharpRight > RIVAL && distSharpLeft <= RIVAL) mode = TURN_LEFT;
+        if(distSharpRight <= RIVAL && distSharpLeft <= RIVAL) mode = ATTACK;
     break;
     }
 
     case TURN_RIGHT:
     {
-        righSpeed = SEARCH_SPEED;
+        rightSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         right();
-        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
-        if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
-        if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) mode = TURN_LEFT;
-        if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) mode = ATTACK;
+        if(leftTatamiRead < BORDE_TATAMI || rightTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
+        if(distSharpRight > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
+        if(distSharpRight > RIVAL && distSharpLeft <= RIVAL) mode = TURN_LEFT;
+        if(distSharpRight <= RIVAL && distSharpLeft <= RIVAL) mode = ATTACK;
     break;
     }
 
     case TURN_LEFT:
     {
-        righSpeed = SEARCH_SPEED;
+        rightSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         left();
-        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
-        if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
-        if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) mode = TURN_RIGHT;
-        if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) mode = ATTACK;
+        if(leftTatamiRead < BORDE_TATAMI || rightTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
+        if(distSharpRight > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
+        if(distSharpRight <= RIVAL && distSharpLeft > RIVAL) mode = TURN_RIGHT;
+        if(distSharpRight <= RIVAL && distSharpLeft <= RIVAL) mode = ATTACK;
     break;
     }
 
     case ATTACK:
     {
-        righSpeed = ATTACK_SPEED; //+ (distSharpRigh * (-2));
+        rightSpeed = ATTACK_SPEED; //+ (distSharpRight * (-2));
         leftSpeed = ATTACK_SPEED; //+ (distSharpLeft * (-2));
         forward();
         if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
-        if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
-        if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) mode = TURN_RIGHT;
-        if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) mode = TURN_LEFT;
+        if(distSharpRight > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
+        if(distSharpRight <= RIVAL && distSharpLeft > RIVAL) mode = TURN_RIGHT;
+        if(distSharpRight > RIVAL && distSharpLeft <= RIVAL) mode = TURN_LEFT;
     break;
     }
 
     case TATAMI_LIMIT: 
     {
-    righSpeed = AVERAGE_SPEED;
+    rightSpeed = AVERAGE_SPEED;
     leftSpeed = AVERAGE_SPEED;
     backward();
     delay(DELAY_BACK);
-    if(leftTatamiRead > BORDE_TATAMI && righTatamiRead > BORDE_TATAMI) mode = SEARCH;
+    if(leftTatamiRead > BORDE_TATAMI && rightTatamiRead > BORDE_TATAMI) mode = SEARCH;
     
     break;
     }
@@ -192,12 +193,12 @@ void printSensors()
   if (millis() > tiempo_actual + TICK_DEBUG)
         {
           Serial.print("  Right tatami: ");
-          Serial.print(righTatamiRead);
+          Serial.print(rightTatamiRead);
           Serial.print("  //  ");
           Serial.print("  Left tatami: ");
           Serial.print(leftTatamiRead);
           Serial.print("  Right dist: ");
-          Serial.print(distSharpRigh);
+          Serial.print(distSharpRight);
           Serial.print("  //  ");
           Serial.print("  Left dist: ");
           Serial.println(distSharpLeft);
@@ -229,7 +230,7 @@ void setup()
   Serial.begin(9600);
   delay(5000);
   //while(true)Serial.println(digitalRead(3));delay(500);
-  /*forward();
+  forward();
   delay(5000);
   backward();
   delay(5000);
@@ -239,21 +240,24 @@ void setup()
   delay(3000);
   stopMotor();
   delay(3000);
-  */
+  
 }
 
 void loop() 
 {
-  distSharpRigh = sharpRight->SharpDist(n);
+  distSharpRight = sharpRight->SharpDist(n);
   distSharpLeft = sharpLeft->SharpDist(n);
-  righTatamiRead = rightTatami->TatamiRead(n);
+  rightTatamiRead = rightTatami->TatamiRead(n);
   leftTatamiRead = LeftTatami->TatamiRead(n);
 
   estrategia();
 
-  if(DEBUG)
-  {
+  if(DEBUG_SENSORES)
+   {   
     printSensors();
+  }
+  if(DEBUG_MODES)
+  { 
     printRobotStatus(mode);
   }
 }
