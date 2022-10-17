@@ -165,7 +165,7 @@ void estrategia()
         rightSpeed = ATTACK_SPEED; //+ (distSharpRight * (-2));
         leftSpeed = ATTACK_SPEED; //+ (distSharpLeft * (-2));
         forward();
-        if(leftTatamiRead < BORDE_TATAMI || righTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
+        if(leftTatamiRead < BORDE_TATAMI || rightTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
         if(distSharpRight > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
         if(distSharpRight <= RIVAL && distSharpLeft > RIVAL) mode = TURN_RIGHT;
         if(distSharpRight > RIVAL && distSharpLeft <= RIVAL) mode = TURN_LEFT;
