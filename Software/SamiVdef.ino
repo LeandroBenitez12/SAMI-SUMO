@@ -22,33 +22,37 @@ BluetoothSerial SerialBT;
 
 
 //Variables y constantes para los sensores de tatami
-#define PIN_SENSOR_TATAMI_IZQ 0
-#define PIN_SENSOR_TATAMI_DER 1
+#define PIN_SENSOR_TATAMI_IZQ 26
+#define PIN_SENSOR_TATAMI_DER 27
 int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 300
 
 //Variables y constantes para los sensores de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO A3
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO A4
+#define PIN_SENSOR_DISTANCIA_DERECHO 32
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO 33
 #define RIVAL 50
 int distSharpRigh;
 int distSharpLeft;
 
 // Variables y constantes para los motores
-#define PIN_MOTOR_MR1 11 //DIR
-#define PIN_MOTOR_MR2PWM 10 //PWM
-#define PIN_MOTOR_ML1 9 //DIR
-#define PIN_MOTOR_ML2PWM 6 //PWM
-#define PIN_BUTTON_START 2
-#define PIN_BUTTON_STRATEGY 3  //te ponen 
-#define PIN_BUZZER 5
+#define PIN_MOTOR_MR1 22 //DIR
+#define PIN_MOTOR_MR2PWM 21 //PWM
+#define PIN_MOTOR_ML1 19 //DIR
+#define PIN_MOTOR_ML2PWM 18 //PWM
 #define SEARCH_SPEED 100
 #define ATTACK_SPEED 250
 #define ATTACK_SPEED_SNAKE 250
-#define AVERAGE_SPEED 200;
+#define AVERAGE_SPEED 200
 int righSpeed = 200;
 int leftSpeed = 200;
+
+//Pines para los botones
+#define PIN_BUTTON_START 34
+bool boton_start;
+#define PIN_BUTTON_STRATEGY 35
+bool boton_button2;
+
 //<------------------------------------------------------------------------------------------------------------->//
 //Instanciamos todos los objetos del robot
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
@@ -170,7 +174,7 @@ void Snake()
     {
     case STANDBY_SNAKE:
     {
-        bool boton_start = start->GetIsPress();
+        boton_start = start->GetIsPress();
         if (!boton_start) 
         {
           delay(5000);
@@ -258,7 +262,7 @@ void Ronaldinho()
   {
     case STANDBY_RONALDINHO:
     {
-      bool boton_start = start->GetIsPress();
+      boton_start = start->GetIsPress();
         if (!boton_start)
         {
           delay(5000);
@@ -321,7 +325,7 @@ void VeniVeni()
   {
     case STANDBY_VENI_VENI:
     {
-        bool boton_start = start->GetIsPress();
+        boton_start = start->GetIsPress();
         if (!boton_start) 
         {
           delay(5000);
@@ -409,7 +413,7 @@ void River()
   {
     case STANDBY_RIVER:
     {
-      bool boton_start = start->GetIsPress();
+      boton_start = start->GetIsPress();
       if (!boton_start) 
       {
         delay(5000);
@@ -592,7 +596,7 @@ void printStrategy()
 
 void setup()
 {
-  SerialBT.begin("Bover");
+  SerialBT.begin("Sami");
   Serial.begin(9600);
 }
 
