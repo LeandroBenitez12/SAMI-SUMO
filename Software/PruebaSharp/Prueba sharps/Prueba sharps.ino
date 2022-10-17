@@ -1,8 +1,8 @@
 #include <Sharp.h>
 
 //sensor de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO A3
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO A4
+#define PIN_SENSOR_DISTANCIA_DERECHO 33
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO 25
 #define RIVAL 30
 int distSharpRigh;
 int distSharpLeft;
@@ -23,7 +23,7 @@ void setup()
 void loop() 
 {
     distSharpRigh = sharpRight->SharpDist(n);
-    distSharpLeft = sharpLeft->SharpDist(n);
+    //distSharpLeft = sharpLeft->SharpDist(n);
     
     if(DEBUG)
     {
@@ -31,8 +31,8 @@ void loop()
         {
             Serial.print("Right dist: ")
             Serial.println(distSharpRigh)
-            Serial.print("Left dist: ")
-            Serial.println(distSharpLeft)
+            //Serial.print("Left dist: ")
+            //Serial.println(distSharpLeft)
         }
 
     }
