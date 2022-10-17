@@ -29,10 +29,10 @@ void loop()
     {
         if (millis() > tiempo_actual + TICK_DEBUG)
         {
-            Serial.print("Right dist: ")
-            Serial.println(distSharpRigh)
-            Serial.print("Left dist: ")
-            Serial.println(distSharpLeft)
+            Serial.print("Right dist: ");
+            Serial.println(distSharpRigh);
+            Serial.print("Left dist: ");
+            Serial.println(distSharpLeft);
         }
 
     }

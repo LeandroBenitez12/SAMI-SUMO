@@ -28,10 +28,10 @@ void loop()
     {
         if (millis() > tiempo_actual + TICK_DEBUG)
         {
-            Serial.print("Right tatami: ")
-            Serial.println(righTatamiRead)
-            Serial.print("Left tatami: ")
-            Serial.println(leftTatamiRead)
+            Serial.print("Right tatami: ");
+            Serial.println(righTatamiRead);
+            Serial.print("Left tatami: ");
+            Serial.println(leftTatamiRead);
         }
 
     }
