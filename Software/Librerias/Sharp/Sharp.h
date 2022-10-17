@@ -6,10 +6,11 @@ class Sharp
 {
 private:
   int pin;
+  int n = 3;
 
 public:
   Sharp(int p);
-  double SharpDist(int n);
+  double SharpDist();
 };
 
 #endif

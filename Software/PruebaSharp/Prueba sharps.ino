@@ -6,7 +6,6 @@
 #define RIVAL 30
 int distSharpRigh;
 int distSharpLeft;
-int n = 3;
 
 unsigned long tiempo_actual = 0;
 #define TICK_DEBUG 500
@@ -22,17 +21,17 @@ void setup()
 
 void loop() 
 {
-    distSharpRigh = sharpRight->SharpDist(n);
-    //distSharpLeft = sharpLeft->SharpDist(n);
+    distSharpRigh = sharpRight->SharpDist();
+    distSharpLeft = sharpLeft->SharpDist();
     
     if(DEBUG)
     {
         if (millis() > tiempo_actual + TICK_DEBUG)
         {
-            Serial.print("Right dist: ")
-            Serial.println(distSharpRigh)
-            //Serial.print("Left dist: ")
-            //Serial.println(distSharpLeft)
+            Serial.print("Right dist: ");
+            Serial.println(distSharpRigh);
+            Serial.print("Left dist: ");
+            Serial.println(distSharpLeft);
         }
 
     }

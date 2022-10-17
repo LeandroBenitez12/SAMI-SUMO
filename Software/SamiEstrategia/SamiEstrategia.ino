@@ -280,10 +280,10 @@ void setup()
 
 void loop() 
 {
-  distSharpRight = sharpRight->SharpDist(n);
-  distSharpLeft = sharpLeft->SharpDist(n);
-  rightTatamiRead = rightTatami->TatamiRead(n);
-  leftTatamiRead = LeftTatami->TatamiRead(n);
+  distSharpRight = sharpRight->SharpDist();
+  distSharpLeft = sharpLeft->SharpDist();
+  rightTatamiRead = rightTatami->TatamiRead();
+  leftTatamiRead = LeftTatami->TatamiRead();
   estrategia();
 
   if(DEBUG_SENSORES)

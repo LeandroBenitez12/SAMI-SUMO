@@ -7,7 +7,7 @@ Tatami::Tatami(int p)
     pinMode(pin, INPUT);
 }
 
-float Tatami::TatamiRead(int n) 
+float Tatami::TatamiRead() 
 {
     long suma = 0;
     //if (pin == PIN_TATAMI_D) suma = -500;

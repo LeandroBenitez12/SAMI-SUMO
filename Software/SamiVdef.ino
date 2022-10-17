@@ -27,7 +27,6 @@ BluetoothSerial SerialBT;
 int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 300
-int n = 3;
 
 //Variables y constantes para los sensores de distancia
 #define PIN_SENSOR_DISTANCIA_DERECHO A3
@@ -136,10 +135,10 @@ void printTatami()
 //Funcion para la lectura de los sensores
 void sensorsReading()
   {
-    distSharpRigh = sharpRight->SharpDist(n);
-    distSharpLeft = sharpLeft->SharpDist(n);
-    righTatamiRead = rightTatami->TatamiRead(n);
-    leftTatamiRead = LeftTatami->TatamiRead(n);
+    distSharpRigh = sharpRight->SharpDist();
+    distSharpLeft = sharpLeft->SharpDist();
+    righTatamiRead = rightTatami->TatamiRead();
+    leftTatamiRead = LeftTatami->TatamiRead();
   }
 //<------------------------------------------------------------------------------------------------------------->//
 //Con el enum reemplazamos los casos de la maquina de estado por palabras descriptivas para mejor interpretacion del codigo

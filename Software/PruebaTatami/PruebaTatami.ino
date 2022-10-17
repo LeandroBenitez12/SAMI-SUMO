@@ -6,7 +6,6 @@
 int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 300
-int n = 3;
 
 unsigned long tiempo_actual = 0;
 #define TICK_DEBUG 500
@@ -22,8 +21,8 @@ void setup()
 
 void loop() 
 {
-    righTatamiRead = rightTatami->TatamiRead(n);
-    leftTatamiRead = LeftTatami->TatamiRead(n);
+    righTatamiRead = rightTatami->TatamiRead();
+    leftTatamiRead = LeftTatami->TatamiRead();
     if(DEBUG)
     {
         if (millis() > tiempo_actual + TICK_DEBUG)

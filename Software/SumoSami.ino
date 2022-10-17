@@ -227,10 +227,10 @@ void setup()
 
 void loop() 
 {
-  distSharpRigh = sharpRight->SharpDist(n);
-  distSharpLeft = sharpLeft->SharpDist(n);
-  righTatamiRead = rightTatami->TatamiRead(n);
-  leftTatamiRead = LeftTatami->TatamiRead(n);
+  distSharpRigh = sharpRight->SharpDist();
+  distSharpLeft = sharpLeft->SharpDist();
+  righTatamiRead = rightTatami->TatamiRead();
+  leftTatamiRead = LeftTatami->TatamiRead();
 
   movementLogic();
 
