@@ -4,6 +4,9 @@
 #include <Tatami.h>
 #include <Sharp.h>
 #include "BluetoothSerial.h"
+#include <Wire.h>			// libreria para bus I2C
+#include <Adafruit_GFX.h>		// libreria para pantallas graficas
+#include <Adafruit_SSD1306.h>		// libreria para controlador SSD1306
 
 //debug
 #define DEBUG_SHARP 1
@@ -51,10 +54,16 @@ int leftSpeed = 200;
 #define PIN_BUTTON_START 34
 bool boton_start;
 #define PIN_BUTTON_STRATEGY 35
-bool boton_button2;
+bool selectStrategy;
 
+// variables y constantes para la pantalla oled
+#define ANCHO 128			// reemplaza ocurrencia de ANCHO por 128
+#define ALTO 64				// reemplaza ocurrencia de ALTO por 64
+#define OLED_RESET 4			// necesario por la libreria pero no usado
 //<------------------------------------------------------------------------------------------------------------->//
 //Instanciamos todos los objetos del robot
+Adafruit_SSD1306 oled(ANCHO, ALTO, &Wire, OLED_RESET);	// instancio la pantalla oled con una funcion de la libreria de adafruit
+
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
 Motor *mIzq = new Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, leftSpeed);
 
@@ -64,7 +73,7 @@ Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
 Sharp *sharpRight = new Sharp(PIN_SENSOR_DISTANCIA_DERECHO);
 Sharp *sharpLeft = new Sharp(PIN_SENSOR_DISTANCIA_IZQUIERDO);
 
-Button *button2 = new  Button(PIN_BUTTON_STRATEGY);
+Button *selectStrategy = new  Button(PIN_BUTTON_STRATEGY);
 Button *start = new  Button(PIN_BUTTON_START);
 //<------------------------------------------------------------------------------------------------------------->//
 //Funciones para indicar el lado del giro del motor y su velocidad
@@ -152,7 +161,8 @@ enum strategy
   SNAKE,
   RONALDINHO,
   VENI_VENI,
-  RIVER
+  RIVER,
+  SAN_LORENZO
 };
 int strategy = MENU;
 int secondaryStrategy = RIVER;
@@ -453,13 +463,161 @@ void River()
   }
 }
 //<------------------------------------------------------------------------------------------------------------->//
+enum sanLorenzo
+{
+  STANDBY_SAN_LORENZO
+};
+int sanLorenzo = STANDBY_SAN_LORENZO;
+//Maquina de estados para la estrategia de San Lorenzo (literalmente no hace nada)
+void SanLorenzo()
+{
+  switch (sanLorenzo)
+  {
+  case STANDBY_SAN_LORENZO:
+  {
+  stop();
+  delay(5000);
+  forward();
+  delay(1000);
+  break;
+  }
+  }
+}
+//<------------------------------------------------------------------------------------------------------------->//
+enum menu
+{
+  MAIN_MENU,
+  SNAKE_MENU,
+  RONALDINHO_MENU,
+  VENI_VENI_MENU,
+  RIVER_MENU,
+  SAN_LORENZO_MENU
+};
+int menu = MAIN_MENU;
+//Maquina de estados para navegar dentro del menu y seleccionar la estrategia
+Menu()
+{
+  switch (menu)
+  {
+  case MAIN_MENU:
+  {
+    oled.clearDisplay();		
+    oled.setTextColor(WHITE);	
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);		
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,19);			
+    oled.print("Snake");
+    oled.setCursor(0,28);			
+    oled.print("Ronaldinho");
+    oled.setCursor(0,37);			
+    oled.print("Veni veni");
+    oled.setCursor(0,46);			
+    oled.print("River");
+    oled.setCursor(0,55);			
+    oled.print("San Lorenzo");
+    oled.display();
+    if(selectStrategy->GetIsPress()) menu = SNAKE_MENU;
+    break;
+  }
+
+  case SNAKE_MENU:
+  {
+    oled.clearDisplay();		
+    oled.setTextColor(WHITE);	
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);		
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,19);			
+    oled.print("Snake");
+    oled.display();
+    if(selectStrategy->GetIsPress()) menu = RONALDINHO_MENU;
+    if(start->GetIsPress()) strategy = SNAKE;
+    break;
+  }
+
+  case RONALDINHO_MENU:
+  {
+    oled.clearDisplay();		
+    oled.setTextColor(WHITE);	
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);		
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,28);			
+    oled.print("Ronaldinho");
+    oled.display();
+    if(selectStrategy->GetIsPress()) menu = VENI_VENI_MENU;
+    if(start->GetIsPress()) strategy = RONALDINHO;
+    break;
+  }
+
+  case VENI_VENI_MENU:
+  {
+    oled.clearDisplay();		
+    oled.setTextColor(WHITE);	
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);		
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,37);			
+    oled.print("Veni veni");
+    oled.display();
+    if(selectStrategy->GetIsPress()) menu = RIVER_MENU;
+    if(start->GetIsPress()) strategy = VENI_VENI;
+    break;
+  }
+
+  case RIVER_MENU:
+  {
+    oled.clearDisplay();		
+    oled.setTextColor(WHITE);	
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);		
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,46);			
+    oled.print("River");
+    oled.display();
+    if(selectStrategy->GetIsPress()) menu = SAN_LORENZO_MENU;
+    if(start->GetIsPress()) strategy = RIVER;
+    break;
+  }
+
+  case SAN_LORENZO_MENU:
+  {
+    oled.clearDisplay();		
+    oled.setTextColor(WHITE);	
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);		
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,55);			
+    oled.print("San Lorenzo");
+    oled.display();
+    if(selectStrategy->GetIsPress()) menu = SNAKE_MENU;
+    if(start->GetIsPress()) strategy = SAN_LORENZO;
+    break;
+  }
+  }
+}
+//<------------------------------------------------------------------------------------------------------------->//
+//<------------------------------------------------------------------------------------------------------------->//
 //Maquina de estados para el menu de la pantalla oled
 void logicMovement(){
   switch (strategy)
   {
     case MENU:
     {
-      //aca van todos los chiches de la pantalla oled, el objetivo es un menu prolijo, entendible y funcional.
+      Menu();
     }
     case SNAKE:
     {
@@ -598,6 +756,8 @@ void setup()
 {
   SerialBT.begin("Sami");
   Serial.begin(9600);
+  Wire.begin();					// inicializa bus I2C
+  oled.begin(SSD1306_SWITCHCAPVCC, 0x3C);	// inicializa pantalla con direccion 0x3C
 }
 
 void loop() 
