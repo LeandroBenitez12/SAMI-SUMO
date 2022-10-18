@@ -5,6 +5,7 @@
 
 #define DEBUG_MODES 1
 #define DEBUG_SENSORES 1
+#define LED_STANDBY 2
 #define TICK_DEBUG 500
 unsigned long tiempo_actual = 0;
 
@@ -32,11 +33,11 @@ int distSharpLeft;
 #define PIN_MOTOR_ML1 19 //DIR
 #define PIN_MOTOR_ML2PWM 18 //PWM
 //velocidades
-#define SEARCH_SPEED 30
-#define ATTACK_SPEED 120
-#define AVERAGE_SPEED 120;
-int rightSpeed = 150;
-int leftSpeed = 150;
+#define SEARCH_SPEED 45
+#define ATTACK_SPEED 100
+#define AVERAGE_SPEED 100;
+int rightSpeed = 100;
+int leftSpeed = 100;
 //buttons
 #define PIN_BUTTON_START 34
 bool boton_start;
@@ -131,6 +132,7 @@ void estrategia()
     {
       boton_start = start->GetIsPress();
       boton_strategy = strategy->GetIsPress();
+      digitalWrite(LED_STANDBY, HIGH);
 
       if (boton_start){
         mode = SEARCH;
@@ -157,7 +159,7 @@ void estrategia()
     {
         rightSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
-        right();
+        left();
 
         if(leftTatamiRead < BORDE_TATAMI || rightTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
         if(distSharpRight > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
@@ -171,7 +173,7 @@ void estrategia()
     {
         rightSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
-        left();
+        right();
 
         if(leftTatamiRead < BORDE_TATAMI || rightTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
         if(distSharpRight > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
@@ -200,6 +202,7 @@ void estrategia()
     leftSpeed = AVERAGE_SPEED;
     backward();
     delay(DELAY_BACK);
+    if(leftTatamiRead > BORDE_TATAMI && rightTatamiRead > BORDE_TATAMI) mode = SEARCH;
     break;
     }
     }
@@ -248,7 +251,8 @@ void printRobotStatus(int movement)
 void setup()
 {
   Serial.begin(9600);
-  delay(5000);
+  pinMode(LED_STANDBY, OUTPUT);
+  /*delay(5000);
   //while(true)Serial.println(digitalRead(3));delay(500);
   forward();
   delay(5000);
@@ -259,7 +263,7 @@ void setup()
   right();
   delay(3000);
   stopMotor();
-  delay(3000);
+  delay(3000);*/
   
 }
 

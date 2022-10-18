@@ -146,7 +146,7 @@ void sensorsReading()
   }
 
 //<------------------------------------------------------------------------------------------------------------->//
-enum ronaldinho
+enum ronaldinhos
 {
   STANDBY_RONALDINHO,
   GO_FORWARD_RONALDINHO,
@@ -167,7 +167,7 @@ void Ronaldinho()
         {
           delay(5000);
           ronaldinho = GO_FORWARD_RONALDINHO;
-        } 
+        }
         else 
         {
           stop();
@@ -189,7 +189,7 @@ void Ronaldinho()
       righSpeed = ATTACK_SPEED;
       leftSpeed = ATTACK_SPEED;
       backward();
-      delay(1000);
+      delay(1000);//a medir
       ronaldinho = STOP_RONALDINHO;
     }
 
