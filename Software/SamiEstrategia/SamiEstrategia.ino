@@ -3,16 +3,15 @@
 #include <Tatami.h>
 #include <Sharp.h>
 
-#define DEBUG_MODES 1
-#define DEBUG_SENSORES 1
-#define LED_STANDBY 2
+#define DEBUG_MODES 0
+#define DEBUG_SENSORES 0
 #define TICK_DEBUG 500
 unsigned long tiempo_actual = 0;
 
 
 //Sensors de tatami
-#define PIN_SENSOR_TATAMI_IZQ 27
-#define PIN_SENSOR_TATAMI_DER 26
+#define PIN_SENSOR_TATAMI_IZQ 26
+#define PIN_SENSOR_TATAMI_DER 27
 int rightTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 250
@@ -20,8 +19,8 @@ int n = 3;
 #define DELAY_BACK 70
 
 //sensor de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO 33
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO 32
+#define PIN_SENSOR_DISTANCIA_DERECHO 32
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO 33
 int distSharpRight;
 int distSharpLeft;
 #define RIVAL 30
@@ -33,15 +32,14 @@ int distSharpLeft;
 #define PIN_MOTOR_ML1 19 //DIR
 #define PIN_MOTOR_ML2PWM 18 //PWM
 //velocidades
-#define SEARCH_SPEED 45
-#define ATTACK_SPEED 100
-#define AVERAGE_SPEED 100;
-int rightSpeed = 100;
-int leftSpeed = 100;
+#define SEARCH_SPEED 30
+#define ATTACK_SPEED 120
+#define AVERAGE_SPEED 120;
+int rightSpeed = 150;
+int leftSpeed = 150;
 //buttons
 #define PIN_BUTTON_START 34
 bool boton_start;
-bool boton_strategy;
 #define PIN_BUTTON_STRATEGY 35
 //buzzer
 #define PIN_BUZZER 23
@@ -57,7 +55,7 @@ Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
 Sharp *sharpRight = new Sharp(PIN_SENSOR_DISTANCIA_DERECHO);
 Sharp *sharpLeft = new Sharp(PIN_SENSOR_DISTANCIA_IZQUIERDO);
 
-Button *strategy = new  Button(PIN_BUTTON_STRATEGY);
+Button *button2 = new  Button(PIN_BUTTON_STRATEGY);
 Button *start = new  Button(PIN_BUTTON_START);
 
 //-------------------------------------------------------------
@@ -102,16 +100,32 @@ void stopMotor()
   mIzq->Stop();
 }
 //-------------------------------------------------------------
+void printSensors()
+{
+  if (millis() > tiempo_actual + TICK_DEBUG)
+        {
+          Serial.print("Right tatami: ");
+          Serial.print(righTatamiRead);
+          Serial.print("  //  ");
+          Serial.print("Left tatami: ");
+          Serial.println(leftTatamiRead);
+          Serial.print("Right dist: ");
+          Serial.print(distSharpRigh);
+          Serial.print("  //  ");
+          Serial.print("Left dist: ");
+          Serial.println(distSharpLeft);
+        }
+}
 
 
 //-------------------------------------------------------------
 
-enum estrategias
+enum strategy
 {
   MENU,
   SNAKE,
 };
-int estrategias = MENU;
+int strategy = MENU
 
 
 enum strategys{
@@ -130,9 +144,8 @@ void estrategia()
     {
     case STANDBY:
     {
-      boton_start = start->GetIsPress();
-      boton_strategy = strategy->GetIsPress();
-      digitalWrite(LED_STANDBY, HIGH);
+      boton_start = start->getIsPress();
+      boton_strategy = strategy->getIsPress();
 
       if (boton_start){
         mode = SEARCH;
@@ -159,7 +172,7 @@ void estrategia()
     {
         rightSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
-        left();
+        right();
 
         if(leftTatamiRead < BORDE_TATAMI || rightTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
         if(distSharpRight > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
@@ -173,7 +186,7 @@ void estrategia()
     {
         rightSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
-        right();
+        left();
 
         if(leftTatamiRead < BORDE_TATAMI || rightTatamiRead < BORDE_TATAMI) mode = TATAMI_LIMIT;
         if(distSharpRight > RIVAL && distSharpLeft > RIVAL) mode = SEARCH;
@@ -202,7 +215,6 @@ void estrategia()
     leftSpeed = AVERAGE_SPEED;
     backward();
     delay(DELAY_BACK);
-    if(leftTatamiRead > BORDE_TATAMI && rightTatamiRead > BORDE_TATAMI) mode = SEARCH;
     break;
     }
     }
@@ -251,8 +263,7 @@ void printRobotStatus(int movement)
 void setup()
 {
   Serial.begin(9600);
-  pinMode(LED_STANDBY, OUTPUT);
-  /*delay(5000);
+  delay(5000);
   //while(true)Serial.println(digitalRead(3));delay(500);
   forward();
   delay(5000);
@@ -263,7 +274,7 @@ void setup()
   right();
   delay(3000);
   stopMotor();
-  delay(3000);*/
+  delay(3000);
   
 }
 

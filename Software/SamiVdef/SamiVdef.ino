@@ -4,15 +4,22 @@
 #include <Tatami.h>
 #include <Sharp.h>
 #include "BluetoothSerial.h"
+#include <SSD1306.h>
 
 //debug
-#define DEBUG_SHARP 1
-#define DEBUG_TATAMI 1
-#define DEBUG_STATE 1
+#define DEBUG_SHARP 0
+#define DEBUG_TATAMI 0
+#define DEBUG_STATE 0
+#define DEBUG_LDR 1
 #define TICK_DEBUG 500
+#define TICK_DEBUG_STRATEGY 500
+#define TICK_DEBUG_SHARP 500
+#define TICK_DEBUG_TATAMI 500
+#define TICK_DEBUG_LDR 1000
 unsigned long currentTimeSharp = 0;
 unsigned long currentTimeTatami = 0;
 unsigned long currentTimeEstrategy = 0;
+unsigned long currentTimeLdr = 0;
 
 //configuramos el Serial Bluetooth
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -29,32 +36,48 @@ int leftTatamiRead;
 #define BORDE_TATAMI 300
 
 //Variables y constantes para los sensores de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO 32
+#define PIN_SENSOR_DISTANCIA_DERECHO 25
 #define PIN_SENSOR_DISTANCIA_IZQUIERDO 33
-#define RIVAL 50
+#define RIVAL 30
 int distSharpRigh;
 int distSharpLeft;
+
+//Variables y constantes LDR
+#define PIN_SENSOR_LDR 32
+#define MONTADO 100
+int ldr;
 
 // Variables y constantes para los motores
 #define PIN_MOTOR_MR1 22 //DIR
 #define PIN_MOTOR_MR2PWM 21 //PWM
 #define PIN_MOTOR_ML1 19 //DIR
 #define PIN_MOTOR_ML2PWM 18 //PWM
-#define SEARCH_SPEED 100
+#define SEARCH_SPEED 120
 #define ATTACK_SPEED 250
-#define ATTACK_SPEED_SNAKE 250
-#define AVERAGE_SPEED 200
-int righSpeed = 200;
-int leftSpeed = 200;
+#define ATTACK_SPEED_SNAKE 255
+#define AVERAGE_SPEED 255
+int righSpeed = 255;
+int leftSpeed = 255;
+
+//Giros de reposicion
+int tickTurn = 0;
+#define TICK_TURN_45 70
+#define TICK_TURN_90 140
+#define TICK_TURN_135 210
+
 
 //Pines para los botones
 #define PIN_BUTTON_START 34
 bool boton_start;
 #define PIN_BUTTON_STRATEGY 35
-bool boton_button2;
 
+// variables y constantes para la pantalla oled
+#define PIN_SDA 16
+#define PIN_SCL 17
 //<------------------------------------------------------------------------------------------------------------->//
 //Instanciamos todos los objetos del robot
+SSD1306 display (0x3C,PIN_SDA, PIN_SCL); // inicializa pantalla con direccion 0x3C
+
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
 Motor *mIzq = new Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, leftSpeed);
 
@@ -64,9 +87,17 @@ Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
 Sharp *sharpRight = new Sharp(PIN_SENSOR_DISTANCIA_DERECHO);
 Sharp *sharpLeft = new Sharp(PIN_SENSOR_DISTANCIA_IZQUIERDO);
 
-Button *button2 = new  Button(PIN_BUTTON_STRATEGY);
+Button *selectStrategy = new  Button(PIN_BUTTON_STRATEGY);
 Button *start = new  Button(PIN_BUTTON_START);
 //<------------------------------------------------------------------------------------------------------------->//
+
+//Sensor LDR
+
+int LdrRead(int p){
+  int lectura(analogRead(p));
+  return lectura;
+}
+
 //Funciones para indicar el lado del giro del motor y su velocidad
 void forward()
 {
@@ -110,9 +141,14 @@ void stop()
 }
 //<------------------------------------------------------------------------------------------------------------->//
 //Funcion para imprimir la distancia que leen los sharps en el puerto Bluetooth
+void printLDR()
+{
+   SerialBT.print("LDR: ");
+   SerialBT.println(ldr);  
+}
 void printSharp()
 {
-  if (millis() > currentTimeSharp + TICK_DEBUG)
+  if (millis() > currentTimeSharp + TICK_DEBUG_SHARP)
   {
     currentTimeSharp = millis();
     SerialBT.print("Right dist: ");
@@ -125,9 +161,9 @@ void printSharp()
 //Funcion para imprimir la lectura de los sensores de tatami en el puerto Bluetooth
 void printTatami()
 {
-  if (millis() > currentTimeTatami + TICK_DEBUG)
+  if (millis() > currentTimeTatami + TICK_DEBUG_TATAMI)
   {
-    currentTimeSharp = millis();
+    currentTimeTatami = millis();
     SerialBT.print("Right tatami: ");
     SerialBT.print(righTatamiRead);
     SerialBT.print("  //  ");
@@ -152,7 +188,8 @@ enum strategy
   SNAKE,
   RONALDINHO,
   VENI_VENI,
-  RIVER
+  RIVER,
+  SAN_LORENZO
 };
 int strategy = MENU;
 int secondaryStrategy = RIVER;
@@ -175,6 +212,11 @@ void Snake()
     case STANDBY_SNAKE:
     {
         boton_start = start->GetIsPress();
+        display.clear();   
+        display.drawString(19, 0, "Strategy Snake"); 
+        display.drawString(0, 9, "---------------------"); 
+        display.drawString(0,28, "Press Star()");    
+        display.display();
         if (!boton_start) 
         {
           delay(5000);
@@ -189,6 +231,10 @@ void Snake()
 
     case SEARCH_SNAKE:
     {
+        /*righSpeed = ATTACK_SPEED;
+        leftSpeed = ATTACK_SPEED;
+        right();
+        delay(tickTurn);*/
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
         right();
@@ -196,6 +242,7 @@ void Snake()
         if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) snake = TURN_RIGHT_SNAKE;
         if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) snake = TURN_LEFT_SNAKE;
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) snake = ATTACK_SNAKE;
+        break;
     }
 
     case TURN_RIGHT_SNAKE:
@@ -207,6 +254,7 @@ void Snake()
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) snake = SEARCH_SNAKE;
         if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) snake = TURN_LEFT_SNAKE;
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) snake = ATTACK_SNAKE;
+        break;
     }
 
     case TURN_LEFT_SNAKE:
@@ -218,6 +266,7 @@ void Snake()
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) snake = SEARCH_SNAKE;
         if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) snake = TURN_RIGHT_SNAKE;
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) snake = ATTACK_SNAKE;
+        break;
     }
 
     case ATTACK_SNAKE:
@@ -229,7 +278,7 @@ void Snake()
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) snake = SEARCH_SNAKE;
         if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) snake = TURN_RIGHT_SNAKE;
         if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) snake = TURN_LEFT_SNAKE;
-
+        break;
     }
 
     case TATAMI_LIMIT_SNAKE: 
@@ -243,7 +292,6 @@ void Snake()
     }
 
     }
-
 }
 //<------------------------------------------------------------------------------------------------------------->//
 enum ronaldinho
@@ -263,6 +311,11 @@ void Ronaldinho()
     case STANDBY_RONALDINHO:
     {
       boton_start = start->GetIsPress();
+      display.clear();   
+      display.drawString(19, 0, "Strategy Ronaldinho"); 
+      display.drawString(0, 9, "---------------------"); 
+      display.drawString(0,28, "Press Star()");    
+      display.display();
         if (!boton_start)
         {
           delay(5000);
@@ -291,6 +344,7 @@ void Ronaldinho()
       backward();
       delay(1000);
       ronaldinho = STOP_RONALDINHO;
+      break;
     }
 
     case STOP_RONALDINHO:
@@ -298,11 +352,13 @@ void Ronaldinho()
       stop();
       delay(2000);
       ronaldinho = SWITCH_STRATEGY_RONALDINHO;
+      break;
     }
 
     case SWITCH_STRATEGY_RONALDINHO:
     {
       stop();
+      break;
     }
     
   }
@@ -326,8 +382,18 @@ void VeniVeni()
     case STANDBY_VENI_VENI:
     {
         boton_start = start->GetIsPress();
+        display.clear();   
+        display.drawString(19, 0, "Strategy Veni Veni"); 
+        display.drawString(0, 9, "---------------------"); 
+        display.drawString(0,28, "Press Star()");    
+        display.display();
         if (!boton_start) 
         {
+          display.clear();   
+        display.drawString(19, 0, "Strategy Veni Veni"); 
+        display.drawString(0, 9, "---------------------"); 
+        display.drawString(0,28, "arranca en 5");    
+        display.display();
           delay(5000);
           veniVeni = SEARCH_VENI_VENI;
         } 
@@ -336,53 +402,63 @@ void VeniVeni()
           stop();
         }
         break;
-      }
+    }
 
     case SEARCH_VENI_VENI:
     {
+        /*righSpeed = ATTACK_SPEED;
+        leftSpeed = ATTACK_SPEED;
+        right();
+        delay(tickTurn);*/
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
-        right();
+        left();
         if(leftTatamiRead < 250 || righTatamiRead < 250) veniVeni = TATAMI_LIMIT_VENI_VENI;
         if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) veniVeni = TURN_RIGHT_VENI_VENI;
         if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) veniVeni = TURN_LEFT_VENI_VENI;
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) veniVeni = ATTACK_VENI_VENI;
+        break;    
     }
 
     case TURN_RIGHT_VENI_VENI:
     {
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
-        right();
+        stop();
         if(leftTatamiRead < 250 || righTatamiRead < 250) veniVeni = TATAMI_LIMIT_VENI_VENI;
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) veniVeni = SEARCH_VENI_VENI;
         if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) veniVeni = TURN_LEFT_VENI_VENI;
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) veniVeni = ATTACK_VENI_VENI;
+        break;
     }
 
     case TURN_LEFT_VENI_VENI:
     {
         righSpeed = SEARCH_SPEED;
         leftSpeed = SEARCH_SPEED;
-        left();
+        stop();
         if(leftTatamiRead < 250 || righTatamiRead < 250) veniVeni = TATAMI_LIMIT_VENI_VENI;
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) veniVeni = SEARCH_VENI_VENI;
         if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) veniVeni = TURN_RIGHT_VENI_VENI;
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) veniVeni = ATTACK_VENI_VENI;
+        break;
     }
 
     case ATTACK_VENI_VENI:
     {
       righSpeed = ATTACK_SPEED;
       leftSpeed = ATTACK_SPEED;
-      /*if(LDR) forward();
+      if(ldr < MONTADO/*distSharpRigh <= 15 && distSharpLeft <= 15*/){
+        forward();
+        } 
       else 
       {
         stop();
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) veniVeni = SEARCH_VENI_VENI;
         if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) veniVeni = TURN_RIGHT_VENI_VENI;
         if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) veniVeni = TURN_LEFT_VENI_VENI;
-      }*/
+      }
+      break;
     }
 
     case TATAMI_LIMIT_VENI_VENI: 
@@ -414,6 +490,11 @@ void River()
     case STANDBY_RIVER:
     {
       boton_start = start->GetIsPress();
+      display.clear();   
+      display.drawString(19, 0, "Strategy RIver"); 
+      display.drawString(0, 9, "---------------------"); 
+      display.drawString(0,28, "Press Star()");    
+      display.display();
       if (!boton_start) 
       {
         delay(5000);
@@ -428,10 +509,15 @@ void River()
 
     case SEARCH_RIVER:
     {
+      /*righSpeed = ATTACK_SPEED;
+        leftSpeed = ATTACK_SPEED;
+        right();
+        delay(tickTurn);*/
       righSpeed = AVERAGE_SPEED;
       leftSpeed = AVERAGE_SPEED;
       right();
       if(distSharpLeft > RIVAL) river = ATTACK_RIVER;
+      break;
     }
 
     case ATTACK_RIVER:
@@ -440,6 +526,7 @@ void River()
       leftSpeed = ATTACK_SPEED;
       forward();
       if(leftTatamiRead < 250 || righTatamiRead < 250) river = TATAMI_LIMIT_RIVER;
+      break;
     }
 
     case TATAMI_LIMIT_RIVER:
@@ -449,9 +536,231 @@ void River()
       backward;
       delay(300);
       river = SEARCH_RIVER;
+      break;
     }
   }
 }
+//<------------------------------------------------------------------------------------------------------------->//
+enum sanLorenzo
+{
+  STANDBY_SAN_LORENZO
+};
+int sanLorenzo = STANDBY_SAN_LORENZO;
+//Maquina de estados para la estrategia de San Lorenzo (literalmente no hace nada)
+void SanLorenzo()
+{
+  switch (sanLorenzo)
+  {
+  case STANDBY_SAN_LORENZO:
+  {
+  display.clear();   
+  display.drawString(19, 0, "TE EQUIVOCASTE..."); 
+  display.drawString(0, 9, "PELOTUDO..."); 
+  display.drawString(0,28, "Press Star()");    
+  display.display();
+  stop();
+  delay(5000);
+  forward();
+  delay(1000);
+  break;
+  }
+  }
+}
+//<------------------------------------------------------------------------------------------------------------->//
+enum menu
+{
+  /*SELECT_TURN_MENU,
+  TURN_45,
+  TURN_90,
+  TURN_135,*/
+  MAIN_MENU,
+  SNAKE_MENU,
+  RONALDINHO_MENU,
+  VENI_VENI_MENU,
+  RIVER_MENU,
+  SAN_LORENZO_MENU
+};
+int menu = MAIN_MENU;
+//Maquina de estados para navegar dentro del menu y seleccionar la estrategia
+int strategySelect;
+void Menu()
+{
+  switch (menu)
+  {
+
+  /*case SELECT_TURN_MENU:
+  {
+    display.clear();   
+    display.drawString(19, 0, "Select Turn"); 
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,19, "Turn 45g");   
+    display.drawString(0,28, "Turn 90g");    
+    display.drawString(0,37, "Turn 135g");
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = TURN_45;
+    if(start->GetIsPress())
+    {
+      strategy = strategySelect;
+    }
+    break;
+  }
+
+  case TURN_45:
+  {
+    display.clear();   
+    display.drawString(19, 0, "Select Turn"); 
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,19, "Turn 45g");   
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = TURN_90;
+    if(start->GetIsPress())
+    {
+      tickTurn = TICK_TURN_45;
+      strategy = strategySelect;
+    }
+    break;
+  }
+
+  case TURN_90:
+  {
+    display.clear();   
+    display.drawString(19, 0, "Select Turn"); display.drawString(0,37, "Turn 135g");
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,28, "Turn 90g");  
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = TURN_135;
+    if(start->GetIsPress())
+    {
+      righSpeed = ATTACK_SPEED;
+      leftSpeed = ATTACK_SPEED;
+      right();
+      tickTurn = TICK_TURN_90;
+      strategy = strategySelect;
+    }
+    break;
+  }
+
+  case TURN_135:
+  {
+    display.clear();   
+    display.drawString(19, 0, "Select Turn"); 
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,37, "Turn 135g");  
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = TURN_45;
+    if(start->GetIsPress())
+    {
+      tickTurn = TICK_TURN_135;
+      strategy = strategySelect;
+    }
+    break;
+  }*/
+  case MAIN_MENU:
+  {
+  display.clear();   
+    display.drawString(19, 0, "Select strategy"); 
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,19, "Snake");   
+    display.drawString(0,28, "Ronaldinho");    
+    display.drawString(0,37, "Veni veni");  
+    display.drawString(0,46, "River");    
+    display.drawString(0,55, "San Lorenzo");
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = SNAKE_MENU;
+    break;
+  }
+  
+  case SNAKE_MENU:
+  { 
+    display.clear();
+    display.drawString(19, 0, "Select strategy"); 
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,19, "Snake");  
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = RONALDINHO_MENU;
+    if(start->GetIsPress()){
+      display.clear();
+      display.drawString(0,28, "OK, Pecador"); 
+      display.display();
+      strategy = SNAKE;
+    }
+    break;
+  }
+
+  case RONALDINHO_MENU:
+  {  
+    display.clear();
+    display.drawString(19, 0, "Select strategy"); 
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,28, "Ronaldinho");  
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = VENI_VENI_MENU;
+    if(start->GetIsPress()){ 
+      display.clear();
+      display.drawString(0,28, "OK, GAUCHO"); 
+      display.display();
+      strategy = RONALDINHO;
+    }
+    break;
+  }
+
+  case VENI_VENI_MENU:
+  { 
+    display.clear();
+    display.drawString(19, 0, "Select strategy"); 
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,37, "Veni veni"); 
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = RIVER_MENU;
+    if(start->GetIsPress()){
+      
+      display.clear();
+      display.drawString(0,28, "OK, VENI veni"); 
+      display.display();
+      strategy = VENI_VENI;
+    }
+    break;
+  }
+
+  case RIVER_MENU:
+  {
+    display.clear();
+    display.drawString(19, 0, "Select strategy"); 
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,46, "River");     
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = SAN_LORENZO_MENU;
+    if(start->GetIsPress())
+      {
+      display.clear();
+      display.drawString(0,28, "El taco no, hace la personal"); 
+      display.display();
+      strategy = RIVER;
+    }
+    break;
+  }
+
+  case SAN_LORENZO_MENU:
+  { 
+    display.clear();
+    display.drawString(19, 0, "Select strategy"); 
+    display.drawString(0, 9, "---------------------"); 
+    display.drawString(0,55, "San Lorenzo");  
+    display.display();
+    if(selectStrategy->GetIsPress()) menu = SNAKE_MENU;
+    if(start->GetIsPress())
+      {
+      display.clear();
+      display.drawString(0,28, "san lorenzo"); 
+      display.drawString(0,36, "vos sos ortiva"); 
+      display.display();
+      strategy = SAN_LORENZO;
+    }
+    break;
+  }
+  }
+}
+//<------------------------------------------------------------------------------------------------------------->//
 //<------------------------------------------------------------------------------------------------------------->//
 //Maquina de estados para el menu de la pantalla oled
 void logicMovement(){
@@ -459,7 +768,8 @@ void logicMovement(){
   {
     case MENU:
     {
-      //aca van todos los chiches de la pantalla oled, el objetivo es un menu prolijo, entendible y funcional.
+      Menu();
+      break;
     }
     case SNAKE:
     {
@@ -471,16 +781,19 @@ void logicMovement(){
     {
       Ronaldinho();
       if(ronaldinho = SWITCH_STRATEGY_RONALDINHO) strategy = secondaryStrategy;
+      break;
     }
 
     case VENI_VENI:
     {
       VeniVeni();
+      break;
     }
 
     case RIVER:
     {
       River();
+      break;
     }    
   }
 }
@@ -488,7 +801,7 @@ void logicMovement(){
 //Funcion para imprimir la estrategia y el caso en el puerto Bluetooth
 void printStrategy() 
 {
-  if (millis() > currentTimeEstrategy + TICK_DEBUG)
+  if (millis() > currentTimeEstrategy + TICK_DEBUG_STRATEGY)
   {
     currentTimeEstrategy = millis();
     String mode = "";
@@ -598,13 +911,15 @@ void setup()
 {
   SerialBT.begin("Sami");
   Serial.begin(9600);
+  display.init();
 }
 
-void loop() 
-{ 
+void loop(){ 
   sensorsReading();
+  ldr = LdrRead(PIN_SENSOR_LDR);
   logicMovement();
   if(DEBUG_SHARP) printSharp();
   if(DEBUG_TATAMI) printTatami();
   if(DEBUG_STATE) printStrategy();
+  if(DEBUG_LDR) printLDR();
 }

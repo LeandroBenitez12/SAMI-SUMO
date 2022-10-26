@@ -20,7 +20,7 @@ public:
   {
     pin = p;
 
-    pinMode(pin, INPUT);
+    pinMode(pin, INPUT_PULL_DOWN);
   }
 
   // metodos o acciones
