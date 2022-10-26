@@ -4,7 +4,12 @@
 #include <Tatami.h>
 #include <Sharp.h>
 #include "BluetoothSerial.h"
-#include <SSD1306.h>
+#include <Wire.h>      // libreria para bus I2C
+#include <Adafruit_GFX.h>   // libreria para pantallas graficas
+#include <Adafruit_SSD1306.h>   // libreria para controlador SSD1306
+
+// variable para la creacion de una nueva tare
+TaskHandle_t Task1; 
 
 //debug
 #define DEBUG_SHARP 1
@@ -41,12 +46,12 @@ int distSharpLeft;
 #define PIN_MOTOR_MR2PWM 21 //PWM
 #define PIN_MOTOR_ML1 19 //DIR
 #define PIN_MOTOR_ML2PWM 18 //PWM
-#define SEARCH_SPEED 50
-#define ATTACK_SPEED 100
+#define SEARCH_SPEED 100
+#define ATTACK_SPEED 250
 #define ATTACK_SPEED_SNAKE 250
-#define AVERAGE_SPEED 100
-int righSpeed = 100;
-int leftSpeed = 100;
+#define AVERAGE_SPEED 200
+int righSpeed = 200;
+int leftSpeed = 200;
 
 //Pines para los botones
 #define PIN_BUTTON_START 34
@@ -54,11 +59,12 @@ bool boton_start;
 #define PIN_BUTTON_STRATEGY 35
 
 // variables y constantes para la pantalla oled
-#define PIN_SDA 16
-#define PIN_SCL 17
+#define ANCHO 128     // reemplaza ocurrencia de ANCHO por 128
+#define ALTO 64       // reemplaza ocurrencia de ALTO por 64
+#define OLED_RESET 4      // necesario por la libreria pero no usado
 //<------------------------------------------------------------------------------------------------------------->//
 //Instanciamos todos los objetos del robot
-SSD1306 display (0x3C,PIN_SDA, PIN_SCL); // inicializa pantalla con direccion 0x3C
+Adafruit_SSD1306 oled(ANCHO, ALTO, &Wire, OLED_RESET);  // instancio la pantalla oled con una funcion de la libreria de adafruit
 
 Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
 Motor *mIzq = new Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, leftSpeed);
@@ -113,42 +119,6 @@ void stop()
   mDer->Stop();
   mIzq->Stop();
 }
-//<------------------------------------------------------------------------------------------------------------->//
-//Funcion para imprimir la distancia que leen los sharps en el puerto Bluetooth
-void printSharp()
-{
-  if (millis() > currentTimeSharp + TICK_DEBUG)
-  {
-    currentTimeSharp = millis();
-    SerialBT.print("Right dist: ");
-    SerialBT.print(distSharpRigh);
-    SerialBT.print("  //  ");
-    SerialBT.print("Left dist: ");
-    SerialBT.println(distSharpLeft);
-  }
-}
-//Funcion para imprimir la lectura de los sensores de tatami en el puerto Bluetooth
-void printTatami()
-{
-  if (millis() > currentTimeTatami + TICK_DEBUG)
-  {
-    currentTimeSharp = millis();
-    SerialBT.print("Right tatami: ");
-    SerialBT.print(righTatamiRead);
-    SerialBT.print("  //  ");
-    SerialBT.print("Left tatami: ");
-    SerialBT.println(leftTatamiRead);
-  }
-}
-//<------------------------------------------------------------------------------------------------------------->//
-//Funcion para la lectura de los sensores
-void sensorsReading()
-  {
-    distSharpRigh = sharpRight->SharpDist();
-    distSharpLeft = sharpLeft->SharpDist();
-    righTatamiRead = rightTatami->TatamiRead();
-    leftTatamiRead = LeftTatami->TatamiRead();
-  }
 //<------------------------------------------------------------------------------------------------------------->//
 //Con el enum reemplazamos los casos de la maquina de estado por palabras descriptivas para mejor interpretacion del codigo
 enum strategy
@@ -497,112 +467,114 @@ void Menu()
   {
   case MAIN_MENU:
   {
-    display.clear();   
-    display.drawString(19, 0, "Select strategy"); 
-    display.drawString(0, 9, "---------------------"); 
-    display.drawString(0,19, "Snake");   
-    display.drawString(0,28, "Ronaldinho");    
-    display.drawString(0,37, "Veni veni");  
-    display.drawString(0,46, "River");    
-    display.drawString(0,55, "San Lorenzo");
-    display.display();
+    oled.clearDisplay();    
+    oled.setTextColor(WHITE); 
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);    
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,19);     
+    oled.print("Snake");
+    oled.setCursor(0,28);     
+    oled.print("Ronaldinho");
+    oled.setCursor(0,37);     
+    oled.print("Veni veni");
+    oled.setCursor(0,46);     
+    oled.print("River");
+    oled.setCursor(0,55);     
+    oled.print("San Lorenzo");
+    oled.display();
     if(selectStrategy->GetIsPress()) menu = SNAKE_MENU;
     break;
   }
-  
+
   case SNAKE_MENU:
-  { 
-    display.clear();
-    display.drawString(19, 0, "Select strategy"); 
-    display.drawString(0, 9, "---------------------"); 
-    display.drawString(0,19, "Snake");  
-    display.display();
+  {
+    oled.clearDisplay();    
+    oled.setTextColor(WHITE); 
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);    
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,19);     
+    oled.print("Snake");
+    oled.display();
     if(selectStrategy->GetIsPress()) menu = RONALDINHO_MENU;
-    if(start->GetIsPress())
-    {
-      display.clear();
-      display.drawString(0,28, "OK, Pecador"); 
-      display.display();
-      strategy = SNAKE;
-    }
+    if(start->GetIsPress()) strategy = SNAKE;
     break;
   }
 
   case RONALDINHO_MENU:
-  {  
-    display.clear();
-    display.drawString(19, 0, "Select strategy"); 
-    display.drawString(0, 9, "---------------------"); 
-    display.drawString(0,28, "Ronaldinho");  
-    display.display();
+  {
+    oled.clearDisplay();    
+    oled.setTextColor(WHITE); 
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);    
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,28);     
+    oled.print("Ronaldinho");
+    oled.display();
     if(selectStrategy->GetIsPress()) menu = VENI_VENI_MENU;
-    if(start->GetIsPress())
-    { 
-      display.clear();
-      display.drawString(0,28, "OK, GAUCHO"); 
-      display.display();
-      strategy = RONALDINHO;
-    }
+    if(start->GetIsPress()) strategy = RONALDINHO;
     break;
   }
 
   case VENI_VENI_MENU:
-  { 
-    display.clear();
-    display.drawString(19, 0, "Select strategy"); 
-    display.drawString(0, 9, "---------------------"); 
-    display.drawString(0,37, "Veni veni"); 
-    display.display();
+  {
+    oled.clearDisplay();    
+    oled.setTextColor(WHITE); 
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);    
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,37);     
+    oled.print("Veni veni");
+    oled.display();
     if(selectStrategy->GetIsPress()) menu = RIVER_MENU;
-    if(start->GetIsPress())
-    { 
-      display.clear();
-      display.drawString(0,28, "OK, VENI veni"); 
-      display.display();
-      strategy = VENI_VENI;
-    }
+    if(start->GetIsPress()) strategy = VENI_VENI;
     break;
   }
 
   case RIVER_MENU:
   {
-    display.clear();
-    display.drawString(19, 0, "Select strategy"); 
-    display.drawString(0, 9, "---------------------"); 
-    display.drawString(0,46, "River");     
-    display.display();
+    oled.clearDisplay();    
+    oled.setTextColor(WHITE); 
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);    
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,46);     
+    oled.print("River");
+    oled.display();
     if(selectStrategy->GetIsPress()) menu = SAN_LORENZO_MENU;
-    if(start->GetIsPress())
-    {
-      display.clear();
-      display.drawString(0,28, "El taco no, hace la personal"); 
-      display.display();
-      strategy = RIVER;
-    }
+    if(start->GetIsPress()) strategy = RIVER;
     break;
   }
 
   case SAN_LORENZO_MENU:
-  { 
-    display.clear();
-    display.drawString(19, 0, "Select strategy"); 
-    display.drawString(0, 9, "---------------------"); 
-    display.drawString(0,55, "San Lorenzo");  
-    display.display();
+  {
+    oled.clearDisplay();    
+    oled.setTextColor(WHITE); 
+    oled.setTextSize(1);
+    oled.setCursor(19, 0);    
+    oled.print("Select strategy"); 
+    oled.setCursor(0, 9);
+    oled.print("---------------------");
+    oled.setCursor(0,55);     
+    oled.print("San Lorenzo");
+    oled.display();
     if(selectStrategy->GetIsPress()) menu = SNAKE_MENU;
-    if(start->GetIsPress())
-    {
-      display.clear();
-      display.drawString(0,28, "san lorenzo"); 
-      display.drawString(0,36, "vos sos ortiva"); 
-      display.display();
-      strategy = SAN_LORENZO;
-    }
+    if(start->GetIsPress()) strategy = SAN_LORENZO;
     break;
   }
   }
 }
-//<------------------------------------------------------------------------------------------------------------->//
 //<------------------------------------------------------------------------------------------------------------->//
 //Maquina de estados para el menu de la pantalla oled
 void logicMovement(){
@@ -633,6 +605,14 @@ void logicMovement(){
     {
       River();
     }    
+  }
+}
+//<------------------------------------------------------------------------------------------------------------->//
+void sensors(void *parameter)
+{
+  for (;;)
+  {
+    sensorsReading();
   }
 }
 //<------------------------------------------------------------------------------------------------------------->//
@@ -744,16 +724,61 @@ void printStrategy()
   }
 }
 //<------------------------------------------------------------------------------------------------------------->//
-
+//Funcion para imprimir la distancia que leen los sharps en el puerto Bluetooth
+void printSharp()
+{
+  if (millis() > currentTimeSharp + TICK_DEBUG)
+  {
+    currentTimeSharp = millis();
+    SerialBT.print("Right dist: ");
+    SerialBT.print(distSharpRigh);
+    SerialBT.print("  //  ");
+    SerialBT.print("Left dist: ");
+    SerialBT.println(distSharpLeft);
+  }
+}
+//Funcion para imprimir la lectura de los sensores de tatami en el puerto Bluetooth
+void printTatami()
+{
+  if (millis() > currentTimeTatami + TICK_DEBUG)
+  {
+    currentTimeSharp = millis();
+    SerialBT.print("Right tatami: ");
+    SerialBT.print(righTatamiRead);
+    SerialBT.print("  //  ");
+    SerialBT.print("Left tatami: ");
+    SerialBT.println(leftTatamiRead);
+  }
+}
+//<------------------------------------------------------------------------------------------------------------->//
+//Funcion para la lectura de los sensores
+void sensorsReading()
+  {
+    distSharpRigh = sharpRight->SharpDist();
+    distSharpLeft = sharpLeft->SharpDist();
+    righTatamiRead = rightTatami->TatamiRead();
+    leftTatamiRead = LeftTatami->TatamiRead();
+  }
+//<------------------------------------------------------------------------------------------------------------->//
 void setup()
 {
+  //funcion para crear la nueva tarea para que se ejecute en el nucleo 1
+  xTaskCreatePinnedToCore(
+    sensors, // funcion 
+    "tasksensors", //nombre de la funcion
+    2048, //tamaño de la pila
+    NULL, //parametro a pasarle a la tarea
+    1, // setea la prioridad de la tarea
+    &Task1, //nombre de la variable 
+    1); //en el nucleo en el que se ejecuta la tarea
   SerialBT.begin("Sami");
   Serial.begin(9600);
-  display.init();
+  Wire.begin();         // inicializa bus I2C
+  oled.begin(SSD1306_SWITCHCAPVCC, 0x3C); // inicializa pantalla con direccion 0x3C
 }
 
-void loop(){ 
-  sensorsReading();
+void loop() 
+{ 
   logicMovement();
   if(DEBUG_SHARP) printSharp();
   if(DEBUG_TATAMI) printTatami();
