@@ -1,9 +1,10 @@
 //librerias
 #include <Button.h>
-#include <MotorSumo.h>
+#include <SumoEngineController.h>
 #include <Tatami.h>
 #include <Sharp.h>
 #include "BluetoothSerial.h"
+#include <SSD1306.h>
 
 //debug
 #define DEBUG_SHARP 1
@@ -36,27 +37,30 @@ int distSharpRigh;
 int distSharpLeft;
 
 // Variables y constantes para los motores
-#define PIN_MOTOR_MR1 22 //DIR
-#define PIN_MOTOR_MR2PWM 21 //PWM
-#define PIN_MOTOR_ML1 19 //DIR
-#define PIN_MOTOR_ML2PWM 18 //PWM
-#define SEARCH_SPEED 100
+#define PIN_ENGINE_DIR_RIGHT 22 //DIR
+#define PIN_ENGINE_PWM_RIGHT 21 //PWM
+#define PIN_ENGINE_DIR_LEFT 19 //DIR
+#define PIN_ENGINE_PWM_LEFT 18 //PWM
+#define SEARCH_SPEED 120
 #define ATTACK_SPEED 250
-#define ATTACK_SPEED_SNAKE 250
-#define AVERAGE_SPEED 200
-int righSpeed = 200;
-int leftSpeed = 200;
+#define ATTACK_SPEED_SNAKE 255
+#define AVERAGE_SPEED 255
+int tickTurn = 0;
 
 //Pines para los botones
 #define PIN_BUTTON_START 34
-bool boton_start;
 #define PIN_BUTTON_STRATEGY 35
-bool boton_button2;
+
+// variables y constantes para la pantalla oled
+#define PIN_SDA 16
+#define PIN_SCL 17
+
 
 //<------------------------------------------------------------------------------------------------------------->//
 //Instanciamos todos los objetos del robot
-Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
-Motor *mIzq = new Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, leftSpeed);
+SSD1306 display (0x3C,PIN_SDA, PIN_SCL); // inicializa pantalla con direccion 0x3C
+
+EngineController *Sami = new EngineController(PIN_ENGINE_DIR_RIGHT, PIN_ENGINE_PWM_RIGHT, PIN_ENGINE_DIR_LEFT, PIN_ENGINE_PWM_LEFT);
 
 Tatami *rightTatami = new Tatami(PIN_SENSOR_TATAMI_DER);
 Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
@@ -64,50 +68,8 @@ Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
 Sharp *sharpRight = new Sharp(PIN_SENSOR_DISTANCIA_DERECHO);
 Sharp *sharpLeft = new Sharp(PIN_SENSOR_DISTANCIA_IZQUIERDO);
 
-Button *button2 = new  Button(PIN_BUTTON_STRATEGY);
+Button *selectStrategy = new  Button(PIN_BUTTON_STRATEGY);
 Button *start = new  Button(PIN_BUTTON_START);
-//<------------------------------------------------------------------------------------------------------------->//
-//Funciones para indicar el lado del giro del motor y su velocidad
-void forward()
-{
-  mDer->SetVelocidad(righSpeed);
-  mIzq->SetVelocidad(leftSpeed);
-  mDer->Forward();
-  mIzq->Forward();
-}
-
-void backward()
-{
-  mDer->SetVelocidad(righSpeed);
-  mIzq->SetVelocidad(leftSpeed);
-  mDer->Backward();
-  mIzq->Backward();
-}
-
-void left()
-{
-  mDer->SetVelocidad(righSpeed);
-  mIzq->SetVelocidad(leftSpeed);
-  mDer->Forward();
-  mIzq->Backward();
-}
-
-
-void right()
-{
-  mDer->SetVelocidad(righSpeed);
-  mIzq->SetVelocidad(leftSpeed);
-  mDer->Backward();
-  mIzq->Forward();
-}
-
-void stop()
-{
-  mDer->SetVelocidad(0);
-  mIzq->SetVelocidad(0);
-  mDer->Stop();
-  mIzq->Stop();
-}
 //<------------------------------------------------------------------------------------------------------------->//
 //Funcion para imprimir la distancia que leen los sharps en el puerto Bluetooth
 void printSharp()
@@ -162,47 +124,52 @@ void Ronaldinho()
   {
     case STANDBY_RONALDINHO:
     {
-      boton_start = start->GetIsPress();
-        if (!boton_start)
-        {
-          delay(5000);
-          ronaldinho = GO_FORWARD_RONALDINHO;
-        } 
-        else 
-        {
-          stop();
-        }
-        break;
+      display.clear();   
+      display.drawString(19, 0, "Strategy Ronaldinho"); 
+      display.drawString(0, 9, "---------------------"); 
+      display.drawString(0,28, "Press Star()");    
+      display.display();
+      if (start->GetIsPress())
+      {
+        display.clear();   
+        display.drawString(19, 0, "Strategy Ronaldinho"); 
+        display.drawString(0, 9, "---------------------"); 
+        display.drawString(0,28, "Ok Gaucho");    
+        display.display();
+        delay(5000);
+        ronaldinho = GO_FORWARD_RONALDINHO;
+      } 
+      else Sami->Stop();
+      break;
     }
 
     case GO_FORWARD_RONALDINHO:
     {
-      righSpeed = AVERAGE_SPEED;
-      leftSpeed = AVERAGE_SPEED;
-      forward();
+      Sami->Forward(AVERAGE_SPEED, AVERAGE_SPEED);
       if(leftTatamiRead < 250 || righTatamiRead < 250) ronaldinho = OLEE_RONALDINHO;
       break;
     }
 
     case OLEE_RONALDINHO:
     {
-      righSpeed = ATTACK_SPEED;
-      leftSpeed = ATTACK_SPEED;
-      backward();
+      Sami->Backward(ATTACK_SPEED, ATTACK_SPEED);
       delay(1000);
       ronaldinho = STOP_RONALDINHO;
+      break;
     }
 
     case STOP_RONALDINHO:
     {
-      stop();
-      delay(2000);
+      Sami->Stop();
+      delay(500);
       ronaldinho = SWITCH_STRATEGY_RONALDINHO;
+      break;
     }
 
     case SWITCH_STRATEGY_RONALDINHO:
     {
-      stop();
+      Sami->Stop();
+      break;
     }
     
   }

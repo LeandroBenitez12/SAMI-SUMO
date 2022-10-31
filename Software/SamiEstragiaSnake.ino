@@ -1,9 +1,10 @@
 //librerias
 #include <Button.h>
-#include <MotorSumo.h>
+#include <SumoEngineController.h>
 #include <Tatami.h>
 #include <Sharp.h>
 #include "BluetoothSerial.h"
+#include <SSD1306.h>
 
 //debug
 #define DEBUG_SHARP 1
@@ -36,27 +37,29 @@ int distSharpRigh;
 int distSharpLeft;
 
 // Variables y constantes para los motores
-#define PIN_MOTOR_MR1 22 //DIR
-#define PIN_MOTOR_MR2PWM 21 //PWM
-#define PIN_MOTOR_ML1 19 //DIR
-#define PIN_MOTOR_ML2PWM 18 //PWM
-#define SEARCH_SPEED 100
+#define PIN_ENGINE_DIR_RIGHT 22 //DIR
+#define PIN_ENGINE_PWM_RIGHT 21 //PWM
+#define PIN_ENGINE_DIR_LEFT 19 //DIR
+#define PIN_ENGINE_PWM_LEFT 18 //PWM
+#define SEARCH_SPEED 120
 #define ATTACK_SPEED 250
-#define ATTACK_SPEED_SNAKE 250
-#define AVERAGE_SPEED 200
-int righSpeed = 200;
-int leftSpeed = 200;
+#define ATTACK_SPEED_SNAKE 255
+#define AVERAGE_SPEED 255
+int tickTurn = 0;
 
 //Pines para los botones
 #define PIN_BUTTON_START 34
-bool boton_start;
 #define PIN_BUTTON_STRATEGY 35
-bool boton_button2;
+
+// variables y constantes para la pantalla oled
+#define PIN_SDA 16
+#define PIN_SCL 17
 
 //<------------------------------------------------------------------------------------------------------------->//
 //Instanciamos todos los objetos del robot
-Motor *mDer = new Motor(PIN_MOTOR_MR1, PIN_MOTOR_MR2PWM, righSpeed);
-Motor *mIzq = new Motor(PIN_MOTOR_ML1, PIN_MOTOR_ML2PWM, leftSpeed);
+SSD1306 display (0x3C,PIN_SDA, PIN_SCL); // inicializa pantalla con direccion 0x3C
+
+EngineController *Sami = new EngineController(PIN_ENGINE_DIR_RIGHT, PIN_ENGINE_PWM_RIGHT, PIN_ENGINE_DIR_LEFT, PIN_ENGINE_PWM_LEFT);
 
 Tatami *rightTatami = new Tatami(PIN_SENSOR_TATAMI_DER);
 Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
@@ -64,50 +67,8 @@ Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
 Sharp *sharpRight = new Sharp(PIN_SENSOR_DISTANCIA_DERECHO);
 Sharp *sharpLeft = new Sharp(PIN_SENSOR_DISTANCIA_IZQUIERDO);
 
-Button *button2 = new  Button(PIN_BUTTON_STRATEGY);
+Button *selectStrategy = new  Button(PIN_BUTTON_STRATEGY);
 Button *start = new  Button(PIN_BUTTON_START);
-//<------------------------------------------------------------------------------------------------------------->//
-//Funciones para indicar el lado del giro del motor y su velocidad
-void forward()
-{
-  mDer->SetVelocidad(righSpeed);
-  mIzq->SetVelocidad(leftSpeed);
-  mDer->Forward();
-  mIzq->Forward();
-}
-
-void backward()
-{
-  mDer->SetVelocidad(righSpeed);
-  mIzq->SetVelocidad(leftSpeed);
-  mDer->Backward();
-  mIzq->Backward();
-}
-
-void left()
-{
-  mDer->SetVelocidad(righSpeed);
-  mIzq->SetVelocidad(leftSpeed);
-  mDer->Forward();
-  mIzq->Backward();
-}
-
-
-void right()
-{
-  mDer->SetVelocidad(righSpeed);
-  mIzq->SetVelocidad(leftSpeed);
-  mDer->Backward();
-  mIzq->Forward();
-}
-
-void stop()
-{
-  mDer->SetVelocidad(0);
-  mIzq->SetVelocidad(0);
-  mDer->Stop();
-  mIzq->Stop();
-}
 //<------------------------------------------------------------------------------------------------------------->//
 //Funcion para imprimir la distancia que leen los sharps en el puerto Bluetooth
 void printSharp()
@@ -162,78 +123,78 @@ void Snake()
     {
     case STANDBY_SNAKE:
     {
-        boton_start = start->GetIsPress();
-        if (!boton_start) 
-        {
-          delay(5000);
-          snake = SEARCH_SNAKE;
-        } 
-        else 
-        {
-          stop();
-        }
-        break;
-      }
+      display.clear();   
+      display.drawString(19, 0, "Strategy Snake"); 
+      display.drawString(0, 9, "---------------------"); 
+      display.drawString(0,28, "Press Star()");    
+      display.display();
+      if (start->GetIsPress()) 
+      {
+        display.clear();   
+        display.drawString(19, 0, "Strategy Snake"); 
+        display.drawString(0, 9, "---------------------"); 
+        display.drawString(0,28, "Iniciando en 5");
+        display.display();
+        delay(5000);
+        snake = SEARCH_SNAKE;
+      } 
+      else Sami->Stop();
+      break;
+    }
 
     case SEARCH_SNAKE:
     {
-        righSpeed = SEARCH_SPEED;
-        leftSpeed = SEARCH_SPEED;
-        right();
+        Sami->Right(ATTACK_SPEED, ATTACK_SPEED);
+        delay(tickTurn);
+        Sami->Right(SEARCH_SPEED, SEARCH_SPEED);
         if(leftTatamiRead < 250 || righTatamiRead < 250) snake = TATAMI_LIMIT_SNAKE;
         if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) snake = TURN_RIGHT_SNAKE;
         if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) snake = TURN_LEFT_SNAKE;
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) snake = ATTACK_SNAKE;
+        break;
     }
 
     case TURN_RIGHT_SNAKE:
     {
-        righSpeed = SEARCH_SPEED;
-        leftSpeed = SEARCH_SPEED;
-        right();
+        Sami->Right(SEARCH_SPEED, SEARCH_SPEED);
         if(leftTatamiRead < 250 || righTatamiRead < 250) snake = TATAMI_LIMIT_SNAKE;
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) snake = SEARCH_SNAKE;
         if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) snake = TURN_LEFT_SNAKE;
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) snake = ATTACK_SNAKE;
+        break;
     }
 
     case TURN_LEFT_SNAKE:
     {
-        righSpeed = SEARCH_SPEED;
-        leftSpeed = SEARCH_SPEED;
-        left();
+        Sami->Left(SEARCH_SPEED, SEARCH_SPEED);
         if(leftTatamiRead < 250 || righTatamiRead < 250) snake = TATAMI_LIMIT_SNAKE;
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) snake = SEARCH_SNAKE;
         if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) snake = TURN_RIGHT_SNAKE;
         if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) snake = ATTACK_SNAKE;
+        break;
     }
 
     case ATTACK_SNAKE:
     {
-        righSpeed = ATTACK_SPEED_SNAKE - (distSharpRigh);
-        leftSpeed = ATTACK_SPEED_SNAKE - (distSharpLeft);
-        forward();
+        int righSpeed = ATTACK_SPEED_SNAKE - (distSharpRigh);
+        int leftSpeed = ATTACK_SPEED_SNAKE - (distSharpLeft);
+        Sami->Right(righSpeed, leftSpeed);
         if(leftTatamiRead < 250 || righTatamiRead < 250) snake = TATAMI_LIMIT_SNAKE;
         if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) snake = SEARCH_SNAKE;
         if(distSharpRigh <= RIVAL && leftTatamiRead > RIVAL) snake = TURN_RIGHT_SNAKE;
         if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) snake = TURN_LEFT_SNAKE;
-
+        break;
     }
 
     case TATAMI_LIMIT_SNAKE: 
     {
-    righSpeed = AVERAGE_SPEED;
-    leftSpeed = AVERAGE_SPEED;
-    backward();
+    Sami->Backward(AVERAGE_SPEED, AVERAGE_SPEED);
     delay(300);
     snake = SEARCH_SNAKE;
     break;
     }
-
-    }
-
+  }
 }
-
 //<------------------------------------------------------------------------------------------------------------->//
 //Funcion para imprimir la estrategia y el caso en el puerto Bluetooth
 void printStrategy() 
