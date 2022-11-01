@@ -30,8 +30,8 @@ BluetoothSerial SerialBT;
 //Variables y constantes para los sensores de tatami
 #define PIN_SENSOR_TATAMI_IZQ 33
 #define PIN_SENSOR_TATAMI_DER 25
-int righTatamiRead = 1000;
-int leftTatamiRead = 1000;
+int righTatamiRead;
+int leftTatamiRead;
 #define BORDE_TATAMI 300
 
 //Variables y constantes para los sensores de distancia
@@ -46,15 +46,15 @@ int distSharpLeft;
 #define PIN_ENGINE_PWM_LEFT 21 //PWM
 #define PIN_ENGINE_DIR_RIGHT 19 //DIR
 #define PIN_ENGINE_PWM_RIGHT 18 //PWM
-#define SEARCH_SPEED 200
-#define ATTACK_SPEED 255
-#define ATTACK_SPEED_SNAKE 255
-#define AVERAGE_SPEED 200
+#define SEARCH_SPEED 60// 12 volt 170
+#define ATTACK_SPEED 255// 12 volt 255
+#define ATTACK_SPEED_SNAKE 255// 12 volt 255
+#define AVERAGE_SPEED 100// 12 volt 200
 int tickTurn;
-#define TICK_TURN_FRONT 115
-#define TICK_TURN_SIDE 168
-#define TICK_SHORT_BACK_TURN 200
-#define TICK_LONG_BACK_TURN 235
+#define TICK_TURN_FRONT 59// 12 volt 115 45°
+#define TICK_TURN_SIDE 95// 12 volt 168 90°
+#define TICK_SHORT_BACK_TURN 115// 12 volt 200 110°
+#define TICK_LONG_BACK_TURN 120// 12 volt 135°
 
 
 //Variables y constantes LDR
@@ -131,8 +131,8 @@ void sensorsReading()
   {
     distSharpRigh = sharpRight->SharpDist();
     distSharpLeft = sharpLeft->SharpDist();
-    //righTatamiRead = rightTatami->TatamiRead();
-    //leftTatamiRead = LeftTatami->TatamiRead();
+    righTatamiRead = rightTatami->TatamiRead();
+    leftTatamiRead = LeftTatami->TatamiRead();
   }
 //<------------------------------------------------------------------------------------------------------------->//
 //Con el enum reemplazamos los casos de la maquina de estado por palabras descriptivas para mejor interpretacion del codigo
@@ -339,6 +339,8 @@ void VeniVeni()
       display.drawString(0,28, "Dale dale veni");    
       display.display();
       delay(5000);
+      Sami->Right(ATTACK_SPEED, ATTACK_SPEED);
+      delay(tickTurn);
       veniVeni = SEARCH_VENI_VENI;
     } 
     else Sami->Stop();
@@ -347,8 +349,6 @@ void VeniVeni()
 
     case SEARCH_VENI_VENI:
     {
-      Sami->Right(ATTACK_SPEED, ATTACK_SPEED);
-      delay(tickTurn);
       Sami->Right(SEARCH_SPEED, SEARCH_SPEED);
       if(leftTatamiRead < 250 || righTatamiRead < 250) veniVeni = TATAMI_LIMIT_VENI_VENI;
       if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) veniVeni = TURN_RIGHT_VENI_VENI;
