@@ -1,9 +1,9 @@
 #include <SumoEngineController.h>
 // Variables y constantes para los motores
-#define PIN_ENGINE_DIR_RIGHT 22 //DIR
-#define PIN_ENGINE_PWM_RIGHT 21 //PWM
-#define PIN_ENGINE_DIR_LEFT 19 //DIR
-#define PIN_ENGINE_PWM_LEFT 18 //PWM
+#define PIN_ENGINE_DIR_LEFT 22 //DIR
+#define PIN_ENGINE_PWM_LEFT 21 //PWM
+#define PIN_ENGINE_DIR_RIGHT 19 //DIR
+#define PIN_ENGINE_PWM_RIGHT 18 //PWM
 int rightSpeed = 100;
 int leftSpeed = 100;
 
