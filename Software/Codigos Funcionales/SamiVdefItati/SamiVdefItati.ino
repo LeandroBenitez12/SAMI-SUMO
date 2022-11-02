@@ -7,10 +7,10 @@
 #include <SSD1306.h>
 
 //debug
-#define DEBUG_SHARP 1
-#define DEBUG_TATAMI 1
-#define DEBUG_STATE 1
-#define DEBUG_LDR 1
+#define DEBUG_SHARP 0
+#define DEBUG_TATAMI 0
+#define DEBUG_STATE 0
+#define DEBUG_LDR 0
 #define TICK_DEBUG 500
 #define TICK_DEBUG_STRATEGY 500
 #define TICK_DEBUG_SHARP 500
@@ -37,7 +37,7 @@ int leftTatamiRead;
 //Variables y constantes para los sensores de distancia
 #define PIN_SENSOR_DISTANCIA_DERECHO 27
 #define PIN_SENSOR_DISTANCIA_IZQUIERDO 26
-#define RIVAL 30
+#define RIVAL 43
 int distSharpRigh;
 int distSharpLeft;
 
@@ -48,7 +48,7 @@ int distSharpLeft;
 #define PIN_ENGINE_PWM_RIGHT 18 //PWM
 #define SEARCH_SPEED 75// 12 volt 170
 #define ATTACK_SPEED_LDR 255// 12 volt 255
-#define ATTACK_SPEED 160// 12 volt 220
+#define ATTACK_SPEED 180// 12 volt 220
 #define ATTACK_SPEED_AGGRESSIVE 180// 12 volt 235
 #define AVERAGE_SPEED 100// 12 volt 200
 #define SLOW_ATTACK 40 // 12 volt 120
@@ -292,6 +292,11 @@ void SemiPassive()
       {
         semiPassive = LOW_ATTACK_SEMI_PASSIVE;
       }
+      if(ldr < MONTADO)
+      {
+        Sami->Forward(ATTACK_SPEED, ATTACK_SPEED);
+        if(leftTatamiRead < 250 || righTatamiRead < 250) semiPassive = TATAMI_LIMIT_SEMI_PASSIVE;
+      }
       break;    
     }
 
@@ -302,6 +307,11 @@ void SemiPassive()
       if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) semiPassive = SEARCH_SEMI_PASSIVE;
       if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) semiPassive = TURN_LEFT_SEMI_PASSIVE;
       if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) semiPassive = ATTACK_SEMI_PASSIVE;
+      if(ldr < MONTADO)
+      {
+        Sami->Forward(ATTACK_SPEED, ATTACK_SPEED);
+        if(leftTatamiRead < 250 || righTatamiRead < 250) semiPassive = TATAMI_LIMIT_SEMI_PASSIVE;
+      }
       break;
     }
 
@@ -312,6 +322,11 @@ void SemiPassive()
       if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) semiPassive = SEARCH_SEMI_PASSIVE;
       if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) semiPassive = TURN_RIGHT_SEMI_PASSIVE;
       if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) semiPassive = ATTACK_SEMI_PASSIVE;
+      if(ldr < MONTADO)
+      {
+        Sami->Forward(ATTACK_SPEED, ATTACK_SPEED);
+        if(leftTatamiRead < 250 || righTatamiRead < 250) semiPassive = TATAMI_LIMIT_SEMI_PASSIVE;
+      }
       break;
     }
 
