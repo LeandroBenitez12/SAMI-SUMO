@@ -4,10 +4,12 @@
 #define PIN_ENGINE_PWM_LEFT 21 //PWM
 #define PIN_ENGINE_DIR_RIGHT 19 //DIR
 #define PIN_ENGINE_PWM_RIGHT 18 //PWM
+#define PWM_CHANNEL_RIGHT 12
+#define PWM_CHANNEL_LEFT 11
 int rightSpeed = 100;
-int leftSpeed = 100;
+int leftSpeed = 255;
 
-EngineController *sami = new EngineController(PIN_ENGINE_DIR_RIGHT, PIN_ENGINE_PWM_RIGHT, PIN_ENGINE_DIR_LEFT, PIN_ENGINE_PWM_LEFT);
+EngineController *sami = new EngineController(PIN_ENGINE_DIR_RIGHT, PIN_ENGINE_PWM_RIGHT, PWM_CHANNEL_RIGHT, PIN_ENGINE_DIR_LEFT, PIN_ENGINE_PWM_LEFT, PWM_CHANNEL_LEFT);
 
 void setup(){
 

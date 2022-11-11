@@ -46,13 +46,15 @@ int distSharpLeft;
 #define PIN_ENGINE_PWM_LEFT 21  // PWM
 #define PIN_ENGINE_DIR_RIGHT 19 // DIR
 #define PIN_ENGINE_PWM_RIGHT 18 // PWM
+#define PWM_CHANNEL_RIGHT 12
+#define PWM_CHANNEL_LEFT 11
 #define SEARCH_SPEED 80         // 12 volt 170
 #define ATTACK_SPEED_LDR 255    // 12 volt 255
 #define ATTACK_SPEED 190        // 12 volt 220
 #define STRONG_ATTACK_SPEED 210
 #define ATTACK_SPEED_AGGRESSIVE 240 // 12 volt 235
 #define AVERAGE_SPEED 150         // 12 volt 200
-#define AVERAGE_SPEED_RONALDINHO 170
+#define AVERAGE_SPEED_RONALDINHO 150
 int slowAttack = 40;                // 12 volt 120
 int lowAttackCont;
 unsigned long currentTimeAttack = 0;
@@ -82,7 +84,7 @@ int ldr;
 // Instanciamos todos los objetos del robot
 SSD1306 display(0x3C, PIN_SDA, PIN_SCL); // inicializa pantalla con direccion 0x3C
 
-EngineController *Sami = new EngineController(PIN_ENGINE_DIR_RIGHT, PIN_ENGINE_PWM_RIGHT, PIN_ENGINE_DIR_LEFT, PIN_ENGINE_PWM_LEFT);
+EngineController *Sami = new EngineController(PIN_ENGINE_DIR_RIGHT, PIN_ENGINE_PWM_RIGHT, PWM_CHANNEL_RIGHT, PIN_ENGINE_DIR_LEFT, PIN_ENGINE_PWM_LEFT, PWM_CHANNEL_LEFT);
 
 Tatami *rightTatami = new Tatami(PIN_SENSOR_TATAMI_DER);
 Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
@@ -565,29 +567,29 @@ void Aggressive()
   case SEARCH_AGGRESSIVE:
   {
     Sami->Right(SEARCH_SPEED, SEARCH_SPEED);
-    if (leftTatamiRead < TATAMI_EDGE || righTatamiRead < TATAMI_EDGE) semiAggressive = TATAMI_LIMIT_AGGRESSIVE;
-    if (distSharpRigh <= RIVAL && distSharpLeft > RIVAL) semiAggressive = TURN_RIGHT_AGGRESSIVE;
-    if (distSharpRigh > RIVAL && distSharpLeft <= RIVAL) semiAggressive = TURN_LEFT_AGGRESSIVE;
-    if (distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) semiAggressive = ATTACK_AGGRESSIVE;
+    if (leftTatamiRead < TATAMI_EDGE || righTatamiRead < TATAMI_EDGE) aggressive = TATAMI_LIMIT_AGGRESSIVE;
+    if (distSharpRigh <= RIVAL && distSharpLeft > RIVAL) aggressive = TURN_RIGHT_AGGRESSIVE;
+    if (distSharpRigh > RIVAL && distSharpLeft <= RIVAL) aggressive = TURN_LEFT_AGGRESSIVE;
+    if (distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) aggressive = ATTACK_AGGRESSIVE;
   }
 
   case TURN_RIGHT_AGGRESSIVE:
   {
     Sami->Right(SEARCH_SPEED, SEARCH_SPEED);
-    if (leftTatamiRead < TATAMI_EDGE || righTatamiRead < TATAMI_EDGE) semiAggressive = TATAMI_LIMIT_AGGRESSIVE;
-    if (distSharpRigh > RIVAL && distSharpLeft > RIVAL) semiAggressive = SEARCH_AGGRESSIVE;
-    if (distSharpRigh > RIVAL && distSharpLeft <= RIVAL) semiAggressive = TURN_LEFT_AGGRESSIVE;
-    if (distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) semiAggressive = ATTACK_AGGRESSIVE;
+    if (leftTatamiRead < TATAMI_EDGE || righTatamiRead < TATAMI_EDGE) aggressive = TATAMI_LIMIT_AGGRESSIVE;
+    if (distSharpRigh > RIVAL && distSharpLeft > RIVAL) aggressive = SEARCH_AGGRESSIVE;
+    if (distSharpRigh > RIVAL && distSharpLeft <= RIVAL) aggressive = TURN_LEFT_AGGRESSIVE;
+    if (distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) aggressive = ATTACK_AGGRESSIVE;
     break;
   }
 
   case TURN_LEFT_AGGRESSIVE:
   {
     Sami->Left(SEARCH_SPEED, SEARCH_SPEED);
-    if (leftTatamiRead < TATAMI_EDGE || righTatamiRead < TATAMI_EDGE) semiAggressive = TATAMI_LIMIT_AGGRESSIVE;
-    if (distSharpRigh > RIVAL && distSharpLeft > RIVAL) semiAggressive = SEARCH_AGGRESSIVE;
-    if (distSharpRigh <= RIVAL && distSharpLeft > RIVAL) semiAggressive = TURN_RIGHT_AGGRESSIVE;
-    if (distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) semiAggressive = ATTACK_AGGRESSIVE;
+    if (leftTatamiRead < TATAMI_EDGE || righTatamiRead < TATAMI_EDGE) aggressive = TATAMI_LIMIT_AGGRESSIVE;
+    if (distSharpRigh > RIVAL && distSharpLeft > RIVAL) aggressive = SEARCH_AGGRESSIVE;
+    if (distSharpRigh <= RIVAL && distSharpLeft > RIVAL) aggressive = TURN_RIGHT_AGGRESSIVE;
+    if (distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) aggressive = ATTACK_AGGRESSIVE;
     break;
   }
 
@@ -597,8 +599,10 @@ void Aggressive()
     if (millis() > currentTimeAgressivveAttack + tickAgressivveAttack)
     {
       Sami->Forward(ATTACK_SPEED_AGGRESSIVE, ATTACK_SPEED_AGGRESSIVE);
-      if (distSharpRigh > RIVAL || distSharpLeft > RIVAL) aggressive = SEARCH_AGGRESSIVE;
       if (leftTatamiRead < TATAMI_EDGE || righTatamiRead < TATAMI_EDGE) aggressive = TATAMI_LIMIT_AGGRESSIVE;
+      if (distSharpRigh > RIVAL || distSharpLeft > RIVAL) aggressive = SEARCH_AGGRESSIVE;
+      if (distSharpRigh <= RIVAL && distSharpLeft > RIVAL) aggressive = TURN_RIGHT_AGGRESSIVE;
+      if (distSharpRigh > RIVAL && distSharpLeft <= RIVAL) aggressive = TURN_LEFT_AGGRESSIVE;
       if (ldr < MONTADO)
       {
         Sami->Forward(ATTACK_SPEED_LDR, ATTACK_SPEED_LDR);
@@ -663,7 +667,7 @@ void Ronaldinho()
   case TATAMI_LIMIT_RONALDINHO:
   {
     Sami->Backward(ATTACK_SPEED, ATTACK_SPEED);
-    delay(500);
+    delay(400);
     ronaldinho = TURN_RONALDINHO;
     break;
   }
