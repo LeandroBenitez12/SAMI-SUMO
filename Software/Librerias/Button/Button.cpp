@@ -18,5 +18,6 @@ bool Button::GetIsPress()
     bool estado_actual = digitalRead(pin);
     bool estado = (estado_anterior != estado_actual) && estado_actual == flanco;
     estado_anterior = estado_actual;
+    delay(100);
     return estado;
 }
