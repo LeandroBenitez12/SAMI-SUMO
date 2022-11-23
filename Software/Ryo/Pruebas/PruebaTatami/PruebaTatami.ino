@@ -1,8 +1,8 @@
 #include <Tatami.h>
 
 //Sensors de tatami
-#define PIN_SENSOR_TATAMI_IZQ 32
-#define PIN_SENSOR_TATAMI_DER 33
+#define PIN_SENSOR_TATAMI_IZQ 13
+#define PIN_SENSOR_TATAMI_DER 34
 int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 300

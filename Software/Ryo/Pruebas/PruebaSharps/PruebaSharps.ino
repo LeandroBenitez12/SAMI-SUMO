@@ -1,8 +1,8 @@
 #include <Sharp.h>
 
 //sensor de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO 33
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO 25
+#define PIN_SENSOR_DISTANCIA_DERECHO 32
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO 33
 #define RIVAL 30
 int distSharpRigh;
 int distSharpLeft;

@@ -1,29 +1,29 @@
-#include <SumoEngineController.h>
-// Variables y constantes para los motores
-#define PIN_ENGINE_DIR_LEFT 22 //DIR
-#define PIN_ENGINE_PWM_LEFT 21 //PWM
-#define PIN_ENGINE_DIR_RIGHT 19 //DIR
-#define PIN_ENGINE_PWM_RIGHT 18 //PWM
-#define PWM_CHANNEL_RIGHT 12
-#define PWM_CHANNEL_LEFT 11
-int rightSpeed = 100;
-int leftSpeed = 255;
+#include <Engineesp32.h>
 
-EngineController *sami = new EngineController(PIN_ENGINE_DIR_RIGHT, PIN_ENGINE_PWM_RIGHT, PWM_CHANNEL_RIGHT, PIN_ENGINE_DIR_LEFT, PIN_ENGINE_PWM_LEFT, PWM_CHANNEL_LEFT);
+// Variables y constantes para los motores
+#define PIN_ENGINE_IN1_RIGHT 21
+#define PIN_ENGINE_IN2_RIGHT 19
+#define PIN_ENGINE_IN1_LEFT 22
+#define PIN_ENGINE_IN2_LEFT 23
+int rightSpeed = 100;
+int leftSpeed = 100;
+
+EngineESP32 *Ryo = new EngineESP32(PIN_ENGINE_IN1_RIGHT, PIN_ENGINE_IN2_RIGHT, PIN_ENGINE_IN1_LEFT, PIN_ENGINE_IN2_LEFT);
 
 void setup(){
 
 }
 
 void loop(){
-    sami->Forward(rightSpeed, leftSpeed);
+    Ryo->Forward(rightSpeed, leftSpeed);
     delay(3000);
-    sami->Backward(rightSpeed, leftSpeed);
+    Ryo->Backward(rightSpeed, leftSpeed);
     delay(3000);
-    sami->Right(rightSpeed, leftSpeed);
+    Ryo->Rigth(rightSpeed, leftSpeed);
     delay(3000);
-    sami->Left(rightSpeed, leftSpeed);
+    Ryo->Left(rightSpeed, leftSpeed);
     delay(3000);
-    sami->Stop();
+    Ryo->Stop();
     delay(3000);
+    
 }

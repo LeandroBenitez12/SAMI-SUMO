@@ -1,11 +1,13 @@
 //librerias
-#include <ButtonRyo.h>
+#include <Adafruit_NeoPixel.h>
+#include <Engineesp32.h>
+#include <ButtonPULLUP.h>
 #include <Tatami.h>
 #include <Sharp.h>
 #include "BluetoothSerial.h"
 
 //debug
-#define DEBUG_SHARP 0
+#define DEBUG_SHARP 1
 #define DEBUG_TATAMI 0
 #define DEBUG_STATE 0
 #define DEBUG_LDR 0
@@ -25,60 +27,56 @@ unsigned long currentTimeLdr = 0;
 #endif
 BluetoothSerial SerialBT;
 
+//Aro de led
+#define PIN_LEDS 17
+#define NUM_LEDS 8
+
 //Variables y constantes para los sensores de tatami
-#define PIN_SENSOR_TATAMI_IZQ 13
-#define PIN_SENSOR_TATAMI_DER 27
+#define PIN_SENSOR_TATAMI_IZQ 34
+#define PIN_SENSOR_TATAMI_DER 13
 int righTatamiRead;
 int leftTatamiRead;
 #define BORDE_TATAMI 300
 
 //Variables y constantes para los sensores de distancia
-#define PIN_SENSOR_DISTANCIA_DERECHO 32
-#define PIN_SENSOR_DISTANCIA_IZQUIERDO 33
-#define RIVAL 43
+#define PIN_SENSOR_DISTANCIA_DERECHO 27
+#define PIN_SENSOR_DISTANCIA_IZQUIERDO 35
+#define RIVAL 35
 int distSharpRigh;
 int distSharpLeft;
 
 // Variables y constantes para los motores
-#define PIN_ENGINE_DIR_LEFT 22 //DIR
-#define PIN_ENGINE_PWM_LEFT 21 //PWM
-#define PIN_ENGINE_DIR_RIGHT 19 //DIR
-#define PIN_ENGINE_PWM_RIGHT 18 //PWM
-#define PWM_CHANNEL_RIGHT 12
-#define PWM_CHANNEL_LEFT 11
-#define SEARCH_SPEED 75// 12 volt 170
+#define PIN_ENGINE_IN1_RIGHT 21
+#define PIN_ENGINE_IN2_RIGHT 19
+#define PIN_ENGINE_IN1_LEFT 22
+#define PIN_ENGINE_IN2_LEFT 23
+#define SEARCH_SPEED 65// 12 volt 170
 #define ATTACK_SPEED_LDR 255// 12 volt 255
 #define ATTACK_SPEED 180// 12 volt 220
 #define STRONG_ATTACK_SPEED 210
 #define ATTACK_SPEED_AGGRESSIVE 240// 12 volt 235
 #define AVERAGE_SPEED 100// 12 volt 200
-int slowAttack = 40; // 12 volt 120
+int slowAttack = 45; // 12 volt 120
 int lowAttackCont;
 unsigned long currentTimeAttack = 0;
 int tickTurn;
-#define TICK_LOW_ATTACK 1600
+#define TICK_LOW_ATTACK 1200
 #define TICK_ATTACK_SEARCH 1500
-#define TICK_TURN_FRONT 59// 12 volt 115 45°
-#define TICK_TURN_SIDE 95// 12 volt 168 90°
-#define TICK_SHORT_BACK_TURN 115// 12 volt 200 110°
-#define TICK_LONG_BACK_TURN 120// 12 volt 135°
+#define TICK_TURN_FRONT 29// 45g
+#define TICK_TURN_SIDE 46// 90g
+#define TICK_SHORT_BACK_TURN 67// 110g
+#define TICK_LONG_BACK_TURN 83// 135g
 
-
-//Variables y constantes LDR
-#define PIN_SENSOR_LDR 25
-#define MONTADO 100
-int ldr;
 
 //Pines para los botones y buzzer
-#define PIN_BUTTON_START 18
-enum
-{
-    NONE,
-    SWITCH,
-    START
-};
+#define PIN_BUTTON 18
+bool lec;
+bool flank;
+unsigned long currentTimeButton = 0;
+#define TICK_START 1000
 #define BUZZER 16
 //<------------------------------------------------------------------------------------------------------------->//
+EngineESP32 *Ryo = new EngineESP32(PIN_ENGINE_IN1_RIGHT, PIN_ENGINE_IN2_RIGHT, PIN_ENGINE_IN1_LEFT, PIN_ENGINE_IN2_LEFT);
 
 Tatami *rightTatami = new Tatami(PIN_SENSOR_TATAMI_DER);
 Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
@@ -86,24 +84,10 @@ Tatami *LeftTatami = new Tatami(PIN_SENSOR_TATAMI_IZQ);
 Sharp *sharpRight = new Sharp(PIN_SENSOR_DISTANCIA_DERECHO);
 Sharp *sharpLeft = new Sharp(PIN_SENSOR_DISTANCIA_IZQUIERDO);
 
-Button *start = new  Button(PIN_BUTTON_START);
+Button *start = new  Button(PIN_BUTTON);
+
+Adafruit_NeoPixel leds(NUM_LEDS, PIN_LEDS, NEO_RGB + NEO_KHZ800);
 //<------------------------------------------------------------------------------------------------------------->//
-//Sensor LDR
-int LdrRead(int p){
-  int lectura(analogRead(p));
-  return lectura;
-}
-//<------------------------------------------------------------------------------------------------------------->//
-//Funcion para imprimir la distancia que leen los sharps en el puerto Bluetooth
-void printLdr()
-{
-  if (millis() > currentTimeLdr + TICK_DEBUG_LDR)
-  {
-    currentTimeLdr = millis();
-    SerialBT.print("Ldr: ");
-    SerialBT.println(ldr);
-  }
-}
 void printSharp()
 {
   if (millis() > currentTimeSharp + TICK_DEBUG_SHARP)
@@ -168,9 +152,15 @@ void Passive()
   {
     case STANDBY_PASSIVE:
     {
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(150,150,150));
+    leds.show();
     Ryo->Stop();
     if (start->GetIsPress())
     {
+      leds.clear();
+      leds.show();
+      Ryo->Stop();
       delay(5000);
       Ryo->Right(ATTACK_SPEED, ATTACK_SPEED);
       delay(tickTurn);
@@ -211,7 +201,7 @@ void Passive()
 
     case ATTACK_PASSIVE:
     {
-      if(ldr < MONTADO)
+      if(distSharpRigh <= 10 && distSharpLeft <= 10)
       {
         Ryo->Forward(ATTACK_SPEED_LDR, ATTACK_SPEED_LDR);
         if(leftTatamiRead < 250 || righTatamiRead < 250) passive = TATAMI_LIMIT_PASSIVE;
@@ -255,9 +245,17 @@ void SemiPassive()
   {
     case STANDBY_SEMI_PASSIVE:
     {
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(150,150,150));      
+    leds.setPixelColor(2, leds.Color(150,150,150));
+    leds.show();
+    Ryo->Stop();
     Ryo->Stop();
     if (start->GetIsPress())
     {
+      leds.clear();
+      leds.show();
+      Ryo->Stop();
       delay(5000);
       Ryo->Right(ATTACK_SPEED_LDR, ATTACK_SPEED_LDR);
       delay(tickTurn);
@@ -277,7 +275,7 @@ void SemiPassive()
       {
         semiPassive = LOW_ATTACK_SEMI_PASSIVE;
       }
-      if(ldr < MONTADO)
+      if(distSharpRigh <= 10 && distSharpLeft <= 10)
       {
         Ryo->Forward(ATTACK_SPEED, ATTACK_SPEED);
         if(leftTatamiRead < 250 || righTatamiRead < 250) semiPassive = TATAMI_LIMIT_SEMI_PASSIVE;
@@ -292,7 +290,7 @@ void SemiPassive()
       if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) semiPassive = SEARCH_SEMI_PASSIVE;
       if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) semiPassive = TURN_LEFT_SEMI_PASSIVE;
       if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) semiPassive = ATTACK_SEMI_PASSIVE;
-      if(ldr < MONTADO)
+      if(distSharpRigh <= 10 && distSharpLeft <= 10)
       {
         Ryo->Forward(ATTACK_SPEED, ATTACK_SPEED);
         if(leftTatamiRead < 250 || righTatamiRead < 250) semiPassive = TATAMI_LIMIT_SEMI_PASSIVE;
@@ -307,7 +305,7 @@ void SemiPassive()
       if(distSharpRigh > RIVAL && distSharpLeft > RIVAL) semiPassive = SEARCH_SEMI_PASSIVE;
       if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) semiPassive = TURN_RIGHT_SEMI_PASSIVE;
       if(distSharpRigh <= RIVAL && distSharpLeft <= RIVAL) semiPassive = ATTACK_SEMI_PASSIVE;
-      if(ldr < MONTADO)
+      if(distSharpRigh <= 10 && distSharpLeft <= 10)
       {
         Ryo->Forward(ATTACK_SPEED, ATTACK_SPEED);
         if(leftTatamiRead < 250 || righTatamiRead < 250) semiPassive = TATAMI_LIMIT_SEMI_PASSIVE;
@@ -317,7 +315,7 @@ void SemiPassive()
 
     case ATTACK_SEMI_PASSIVE:
     {
-      if(ldr < MONTADO)
+      if(distSharpRigh <= 10 && distSharpLeft <= 10)
       {
         Ryo->Forward(ATTACK_SPEED, ATTACK_SPEED);
         if(leftTatamiRead < 250 || righTatamiRead < 250) semiPassive = TATAMI_LIMIT_SEMI_PASSIVE;
@@ -340,7 +338,7 @@ void SemiPassive()
     case LOW_ATTACK_SEMI_PASSIVE:
     {
       lowAttackCont++;
-      slowAttack = slowAttack + (lowAttackCont*10);
+      slowAttack = slowAttack + (lowAttackCont*7);
       Ryo->Forward(slowAttack, slowAttack);
       delay(388);
       currentTimeAttack = millis();
@@ -375,9 +373,16 @@ void SemiAggressive()
   {
     case STANDBY_SEMI_AGGRESSIVE:
     {
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(150,150,150));      
+    leds.setPixelColor(2, leds.Color(150,150,150));
+    leds.setPixelColor(3, leds.Color(150,150,150));
+    leds.show();
     Ryo->Stop();
     if (start->GetIsPress())
     {
+      leds.clear();
+      leds.show();
       delay(5000);
       Ryo->Right(ATTACK_SPEED_LDR, ATTACK_SPEED_LDR);
       delay(tickTurn);
@@ -422,11 +427,6 @@ void SemiAggressive()
       if(distSharpRigh <= RIVAL && distSharpLeft > RIVAL) semiAggressive = TURN_RIGHT_SEMI_AGGRESSIVE;
       if(distSharpRigh > RIVAL && distSharpLeft <= RIVAL) semiAggressive = TURN_LEFT_SEMI_AGGRESSIVE;
       if(leftTatamiRead < 250 || righTatamiRead < 250) semiPassive = TATAMI_LIMIT_SEMI_AGGRESSIVE;
-      if(ldr < MONTADO) 
-      {
-        Ryo->Forward(ATTACK_SPEED_LDR, ATTACK_SPEED_LDR);
-        if(leftTatamiRead < 250 || righTatamiRead < 250) semiPassive = TATAMI_LIMIT_SEMI_AGGRESSIVE;
-      }
       if(distSharpRigh > 15 && distSharpLeft > 15)
       {
         Ryo->Forward(STRONG_ATTACK_SPEED, STRONG_ATTACK_SPEED);
@@ -461,9 +461,17 @@ void Aggressive()
   {
     case STANDBY_AGGRESSIVE:
     {
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(150,150,150));      
+    leds.setPixelColor(2, leds.Color(150,150,150));
+    leds.setPixelColor(3, leds.Color(150,150,150));
+    leds.setPixelColor(4, leds.Color(150,150,150));
+    leds.show();
     Ryo->Stop();
     if (start->GetIsPress())
     {
+      leds.clear();     
+      leds.show();
       delay(5000);
       Ryo->Right(ATTACK_SPEED_LDR, ATTACK_SPEED_LDR);
       delay(tickTurn);
@@ -507,7 +515,7 @@ void Aggressive()
         Ryo->Forward(ATTACK_SPEED_AGGRESSIVE, ATTACK_SPEED_AGGRESSIVE);
         if(distSharpRigh > RIVAL || distSharpLeft > RIVAL) aggressive = SEARCH_AGGRESSIVE;
         if(leftTatamiRead < 250 || righTatamiRead < 250) aggressive = TATAMI_LIMIT_AGGRESSIVE;
-        if(ldr < MONTADO) 
+        if(distSharpRigh <= 10 && distSharpLeft <= 10) 
         {
           Ryo->Forward(ATTACK_SPEED_LDR, ATTACK_SPEED_LDR);
           if(leftTatamiRead < 250 || righTatamiRead < 250) aggressive = TATAMI_LIMIT_AGGRESSIVE;
@@ -543,51 +551,131 @@ void RepositioningMenu()
   {
   case TURN_MAIN_MENU:
   {
-    if(start->GetIsPress() == SWITCH) repositioningMenu = TURN_FRONT;
-    if(start->GetIsPress()) 
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(0,150,0));
+    leds.show();
+    flank = start->GetIsPress();
+    if(flank)
     {
-      tickTurn = 0;
-      strategy = STRATEGIES_MENU;
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          repositioningMenu = TURN_FRONT;
+        }
+      }
+      repositioningMenu = TURN_FRONT;
     }
     break;
   }
   case TURN_FRONT:
   {
-    if(start->GetIsPress() == SWITCH) repositioningMenu = TURN_SIDE;
-    if(start->GetIsPress() == START)
+      leds.clear();
+      leds.setPixelColor(1, leds.Color(150,0,0));
+      leds.setPixelColor(2, leds.Color(150,0,0));
+      leds.show();
+    flank = start->GetIsPress();
+    if(flank)
     {
-      tickTurn = TICK_TURN_FRONT;
-      strategy = STRATEGIES_MENU;
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          tickTurn = TICK_TURN_FRONT;
+          strategy = STRATEGIES_MENU;
+        }
+      }
+      repositioningMenu = TURN_SIDE;
     }
     break;
   }
   case TURN_SIDE:
   {
-    if(start->GetIsPress() == SWITCH) repositioningMenu = SHORT_BACK_TURN;
-    if(start->GetIsPress() == START)
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(0,150,0));
+    leds.setPixelColor(2, leds.Color(0,150,0));
+    leds.setPixelColor(3, leds.Color(0,150,0));
+    leds.setPixelColor(4, leds.Color(0,150,0));
+    leds.show();
+    flank = start->GetIsPress();
+    if(flank)
     {
-      tickTurn = TICK_TURN_SIDE;
-      strategy = STRATEGIES_MENU;
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          tickTurn = TICK_TURN_SIDE;
+          strategy = STRATEGIES_MENU;
+        }
+      }
+      repositioningMenu = SHORT_BACK_TURN;
     }
     break;
   }
   case SHORT_BACK_TURN:
   {
-    if(start->GetIsPress() == SWITCH) repositioningMenu = LONG_BACK_TURN;
-    if(start->GetIsPress() == START)
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(0,0,150));
+    leds.setPixelColor(2, leds.Color(0,0,150));
+    leds.setPixelColor(3, leds.Color(0,0,150));
+    leds.setPixelColor(4, leds.Color(0,0,150));
+    leds.setPixelColor(5, leds.Color(0,0,150));
+    leds.setPixelColor(6, leds.Color(0,0,150));
+    leds.show();
+    flank = start->GetIsPress();
+    if(flank)
     {
-      tickTurn = TICK_SHORT_BACK_TURN;
-      strategy = STRATEGIES_MENU;
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          tickTurn = TICK_SHORT_BACK_TURN;
+          strategy = STRATEGIES_MENU;
+        }
+      }
+      repositioningMenu = LONG_BACK_TURN;
     }
     break;
   }
   case LONG_BACK_TURN:
   {
-    if(start->GetIsPress() == SWITCH) repositioningMenu = TURN_FRONT;
-    if(start->GetIsPress() == START)
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(150,150,0));
+    leds.setPixelColor(2, leds.Color(150,150,0));
+    leds.setPixelColor(3, leds.Color(150,150,0));
+    leds.setPixelColor(4, leds.Color(150,150,0));
+    leds.setPixelColor(5, leds.Color(150,150,0));
+    leds.setPixelColor(6, leds.Color(150,150,0));
+    leds.setPixelColor(7, leds.Color(150,150,0));
+    leds.setPixelColor(8, leds.Color(150,150,0));
+    leds.show();
+    flank = start->GetIsPress();
+    if(flank)
     {
-      tickTurn = TICK_LONG_BACK_TURN;
-      strategy = STRATEGIES_MENU;
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          tickTurn = TICK_LONG_BACK_TURN;
+          strategy = STRATEGIES_MENU;
+        }
+      }
+      repositioningMenu = TURN_FRONT;
     }
     break;
   }
@@ -610,35 +698,139 @@ void StrategiesMenu()
   {
   case MAIN_MENU:
   {
-    if(start->GetIsPress() == SWITCH) menu = PASSIVE_MENU;
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(0,0,200));
+    leds.show();
+    flank = start->GetIsPress();
+    if(flank)
+    {
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          menu = PASSIVE_MENU;
+        }
+      }
+      menu = PASSIVE_MENU;
+    }
     break;
   }
   
   case PASSIVE_MENU:
   { 
-    if(start->GetIsPress() == SWITCH) menu = SEMI_PASSIVE_MENU;
-    if(start->GetIsPress() == START) strategy = PASSIVE;
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(150,0,0));
+    leds.setPixelColor(2, leds.Color(150,0,0));
+    leds.setPixelColor(3, leds.Color(150,0,0));
+    leds.setPixelColor(4, leds.Color(150,0,0));
+    leds.setPixelColor(5, leds.Color(150,0,0));
+    leds.setPixelColor(6, leds.Color(150,0,0));
+    leds.setPixelColor(7, leds.Color(150,0,0));
+    leds.setPixelColor(8, leds.Color(150,0,0));
+    leds.show();
+    flank = start->GetIsPress();
+    if(flank)
+    {
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          strategy = PASSIVE;
+        }
+      }
+      menu = SEMI_PASSIVE_MENU;
+    }
     break;
   }
 
   case SEMI_PASSIVE_MENU:
-  {  
-    if(start->GetIsPress() == SWITCH) menu = SEMI_AGGRESSIVE_MENU;
-    if(start->GetIsPress() == START) strategy = SEMI_PASSIVE;
+  { 
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(0,0,150));
+    leds.setPixelColor(2, leds.Color(0,0,150));
+    leds.setPixelColor(3, leds.Color(0,0,150));
+    leds.setPixelColor(4, leds.Color(0,0,150));
+    leds.setPixelColor(5, leds.Color(0,0,150));
+    leds.setPixelColor(6, leds.Color(0,0,150));
+    leds.setPixelColor(7, leds.Color(0,0,150));
+    leds.setPixelColor(8, leds.Color(0,0,150));
+    leds.show(); 
+    flank = start->GetIsPress();
+    if(flank)
+    {
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          strategy = SEMI_PASSIVE;
+        }
+      }
+      menu = menu = SEMI_AGGRESSIVE_MENU;
+    }
     break;
   }
 
   case SEMI_AGGRESSIVE_MENU:
   { 
-    if(start->GetIsPress() == SWITCH) menu = AGGRESSIVE_MENU;
-    if(start->GetIsPress() == START) strategy = SEMI_AGGRESSIVE;
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(0,150,0));
+    leds.setPixelColor(2, leds.Color(0,150,0));
+    leds.setPixelColor(3, leds.Color(0,150,0));
+    leds.setPixelColor(4, leds.Color(0,150,0));
+    leds.show(); 
+    flank = start->GetIsPress();
+    if(flank)
+    {
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          strategy = SEMI_AGGRESSIVE;
+        }
+      }
+      menu = menu = AGGRESSIVE_MENU;
+    }
     break;
   }
 
   case AGGRESSIVE_MENU:
   {
-    if(start->GetIsPress() == SWITCH) menu = PASSIVE_MENU;
-    if(start->GetIsPress() == d) menu = WAIT_FOR_ATTACK;
+    leds.clear();
+    leds.setPixelColor(1, leds.Color(0,150,0));
+    leds.setPixelColor(2, leds.Color(0,150,0));
+    leds.setPixelColor(3, leds.Color(0,150,0));
+    leds.setPixelColor(4, leds.Color(0,150,0));
+    leds.setPixelColor(5, leds.Color(0,150,0));
+    leds.setPixelColor(6, leds.Color(0,150,0));
+    leds.setPixelColor(7, leds.Color(0,150,0));
+    leds.setPixelColor(8, leds.Color(0,150,0));
+    flank = start->GetIsPress();
+    if(flank)
+    {
+      currentTimeButton = millis();
+      lec = digitalRead(PIN_BUTTON);
+      while(!lec)
+      {
+        lec = digitalRead(PIN_BUTTON);
+        if(millis() > currentTimeButton + TICK_START)
+        {
+          strategy = AGGRESSIVE;
+        }
+      }
+      menu = menu = PASSIVE_MENU;
+    }
     break;
   }
   }
@@ -684,131 +876,16 @@ void logicMovement()
   }
 }
 //<------------------------------------------------------------------------------------------------------------->//
-//Funcion para imprimir la estrategia y el caso en el puerto Bluetooth
-/*void printStrategy() 
-{
-  if (millis() > currentTimeEstrategy + TICK_DEBUG_STRATEGY)
-  {
-    currentTimeEstrategy = millis();
-    String mode = "";
-    String status = "";
-    switch (strategy)
-    {
-      case REPOSITIONING_MENU:
-        mode = "REPOSITIONING_MENU";
-        break;
-      case STRATEGIES_MENU:
-        mode = "STRATEGIES_MENU";
-        break;
-      case SNAKE:
-        mode = "SNAKE";
-        switch (snake)
-        {
-          case STANDBY_SNAKE:
-          status = "STANDBY";
-          break;
-          case SEARCH_SNAKE:
-          status = "SEARCH";
-          break;
-          case TURN_RIGHT_SNAKE:
-          status = "TURN_RIGHT";
-          break;
-          case TURN_LEFT_SNAKE:
-          status = "TURN_LEFT";
-          break;
-          case TATAMI_LIMIT_SNAKE:
-          status = "TATAMI_LIMIT";
-          break;
-          case ATTACK_SNAKE:
-          status = "ATTACK";
-          break;
-        }
-        break;
-      case RONALDINHO:
-        mode = "RONALDINHO";
-        switch (ronaldinho)
-        {
-        case STANDBY_RONALDINHO:
-        status = "STANDBY";
-        break;
-        case GO_FORWARD_RONALDINHO:
-        status = "GO_FORWARD";
-        break;
-        case OLEE_RONALDINHO:
-        status = "OLEE";
-        break;
-        case STOP_RONALDINHO:
-        status = "STOP";
-        break;
-        case SWITCH_STRATEGY_RONALDINHO:
-        status = "SWITCH_STRATEGY";
-        break;
-        }
-        break;
-      case VENI_VENI:
-        mode = "VENI_VENI";
-        switch (veniVeni)
-        {
-        case STANDBY_VENI_VENI:
-        status = "STANDBY";
-        break;
-        case SEARCH_VENI_VENI:
-        status = "SEARCH";
-        break;
-        case TURN_RIGHT_VENI_VENI:
-        status = "TURN_RIGHT";
-        break;
-        case TURN_LEFT_VENI_VENI:
-        status = "TURN_LEFT";
-        break;
-        case TATAMI_LIMIT_VENI_VENI:
-        status = "TATAMI_LIMIT";
-        break;
-        case ATTACK_VENI_VENI:
-        status = "ATTACK";
-        break;
-        }
-        break;
-      case RIVER:
-        mode = "RIVER";
-        switch (river)
-        {
-          case STANDBY_RIVER:
-          status = "STANDBY";
-          break;
-          case SEARCH_RIVER:
-          status = "SEARCH";
-          break;
-          case ATTACK_RIVER:
-          status = "ATTACK";
-          break;
-          case TATAMI_LIMIT_RIVER:
-          status = "TATAMI";
-          break;
-        }
-        break;
-      }
-    SerialBT.print("Strategy: ");
-    SerialBT.print(mode);
-    SerialBT.print("  //  Case: ");
-    SerialBT.println(status);
-  }
-}*/
-//<------------------------------------------------------------------------------------------------------------->//
 
 void setup()
 {
-  SerialBT.begin("Sami");
-  Serial.begin(9600);
-  display.init();
+  leds.begin();
+  SerialBT.begin("Ryo");
 }
 
 void loop(){ 
   sensorsReading();
-  ldr = LdrRead(PIN_SENSOR_LDR);
   logicMovement();
   if(DEBUG_SHARP) printSharp();
   if(DEBUG_TATAMI) printTatami();
-  //if(DEBUG_STATE) printStrategy();
-  if(DEBUG_LDR) printLdr();
 }
