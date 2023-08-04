@@ -81,6 +81,12 @@ Realiza un pull request a nuestra rama principal para que podamos revisar y cons
 ![image](https://github.com/LeandroBenitez12/SAMI_RBSUMO/assets/108737751/2288b994-c64d-4952-bb19-41f73b7b3d59)
 ![image](https://github.com/LeandroBenitez12/SAMI_RBSUMO/assets/108737751/b67446e7-8fd3-4351-bf04-a3a9a809f7ee)
 
+y videos....
+
+
+
+https://github.com/LeandroBenitez12/SAMI_RBSUMO/assets/108737751/56b0725f-8328-4741-986b-e7431d0c3679
+
 
 Contacto
 
