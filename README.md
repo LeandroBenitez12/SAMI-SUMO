@@ -78,6 +78,8 @@ Realiza un pull request a nuestra rama principal para que podamos revisar y cons
 ![image](https://github.com/LeandroBenitez12/SAMI_RBSUMO/assets/108737751/8954c7a5-8958-44b1-97bf-dd2ee158d45f)
 ![image](https://github.com/LeandroBenitez12/SAMI_RBSUMO/assets/108737751/697088a0-6192-452f-a020-ac3569ee1c22)
 ![image](https://github.com/LeandroBenitez12/SAMI_RBSUMO/assets/108737751/5607b18e-1426-4e98-baa3-550f20190ff7)
+![image](https://github.com/LeandroBenitez12/SAMI_RBSUMO/assets/108737751/2288b994-c64d-4952-bb19-41f73b7b3d59)
+![image](https://github.com/LeandroBenitez12/SAMI_RBSUMO/assets/108737751/b67446e7-8fd3-4351-bf04-a3a9a809f7ee)
 
 
 Contacto
